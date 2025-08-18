@@ -157,7 +157,7 @@ main_menu() {
         echo -e "${GREEN}${BOLD}1. 启动服务${NC}"
         echo -e "${BLUE}${BOLD}2. 重新登录${NC}"
         echo -e "${MAGENTA}${BOLD}3. 修改密码${NC}"
-        echo -e "${CYAN}${BOLD}4. 修改项目ID${NC}"
+        echo -e "${CYAN}${BOLD}4. 修改项目${NC}"
         echo -e "${WHITE}${BOLD}5. 修改端口${NC}"
         echo -e "${RED}${BOLD}6. 重新安装${NC}"
         echo -e "${CYAN}${BOLD}==================================${NC}"
