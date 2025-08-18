@@ -11,8 +11,8 @@ CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 CLI_VERSION = "0.1.5"  # Match current gemini-cli version
 
 # OAuth Configuration
-CLIENT_ID = "YOUR_CLIENT_ID"
-CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
+CLIENT_SECRET = "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"
 SCOPES = [
     "https://www.googleapis.com/auth/cloud-platform",
     "https://www.googleapis.com/auth/userinfo.email",
