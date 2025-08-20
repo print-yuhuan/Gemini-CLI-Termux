@@ -4,7 +4,7 @@
 
 ## 📌 项目简介
 
-本项目提供一键式脚本，用于在 Termux 环境中自动部署和管理 Gemini-CLI-API-Termux 服务。脚本具备自动检测环境、自动安装依赖、仓库一键克隆、配置管理和服务维护等功能，通过交互式菜单实现 Google Gemini API 反向代理服务的快速安装、配置和运行。
+本项目提供一键式脚本，用于在 Termux 环境中自动部署和管理 Gemini-CLI-Termux 服务。脚本具备自动检测环境、自动安装依赖、仓库一键克隆、配置管理和服务维护等功能，通过交互式菜单实现 Google Gemini API 反向代理服务的快速安装、配置和运行。
 
 ## ⚡ 快速开始
 
@@ -13,7 +13,7 @@
 在 Termux 中运行以下命令自动完成环境检测、依赖安装及服务部署：
 
 ```bash
-curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-API-Termux/main/Install.sh && bash Install.sh
+curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-Termux/main/Install.sh && bash Install.sh
 ```
 
 ## 📋 前置要求
@@ -26,12 +26,12 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-API-Termux/mai
 在使用本项目之前，您需要：
 
 1. **获取 Google Cloud 项目 ID**
-   - 访问 [Google Cloud Console](https://console.cloud.google.com/welcome)
+   - 访问 [Google Cloud Console](https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fwelcome%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser)
    - 创建或选择现有项目，记录项目 ID
 
 2. **启用必要的 API 服务**
-   - [Gemini for Google Cloud](https://console.cloud.google.com/apis/library/cloudaicompanion.googleapis.com)
-   - [Gemini Cloud Assist](https://console.cloud.google.com/apis/library/geminicloudassist.googleapis.com)
+   - [Gemini for Google Cloud](https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fwelcome%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser)
+   - [Gemini Cloud Assist](https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fapis%2Fapi%2Fgeminicloudassist.googleapis.com%2Fmetrics%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser)
 
 ## 🎯 功能特性
 
@@ -52,7 +52,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-API-Termux/mai
 | 选项 | 功能         | 说明                                       |
 |------|--------------|--------------------------------------------|
 | 0    | 退出脚本     | 安全退出脚本程序                           |
-| 1    | 启动服务     | 启动 Gemini-CLI-API-Termux 反向代理服务    |
+| 1    | 启动服务     | 启动 Gemini-CLI-Termux 反向代理服务    |
 | 2    | 重新登录     | 清除认证缓存并重新登录 Google 账号         |
 | 3    | 修改密码     | 设置 API 接口访问密码                      |
 | 4    | 修改项目ID   | 更改 Google Cloud 项目 ID                  |
@@ -99,8 +99,8 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-API-Termux/mai
 
 ## 📮 联系方式
 
-如有问题或建议，请通过 [Issues](https://github.com/print-yuhuan/Gemini-CLI-API-Termux/issues) 页面反馈。
+如有问题或建议，请通过 [Issues](https://github.com/print-yuhuan/Gemini-CLI-Termux/issues) 页面反馈。
 
 ---
 
-*最后更新：2025年8月19日*
+*最后更新：2025年8月21日*
