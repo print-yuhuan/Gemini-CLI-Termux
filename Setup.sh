@@ -10,8 +10,8 @@ WHITE='\033[1;37m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-GEMINI_CLI_API_DIR="$HOME/Gemini-CLI-Termux"
-GEMINI_CLI_API_REPO="https://github.com/print-yuhuan/Gemini-CLI-Termux.git"
+GEMINI_CLI_TERMUX_DIR="$HOME/Gemini-CLI-Termux"
+GEMINI_CLI_TERMUX_REPO="https://github.com/print-yuhuan/Gemini-CLI-Termux.git"
 
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
 
@@ -23,7 +23,7 @@ check_file_exists() {
     fi
 }
 
-install_gemini_cli_api() {
+install_gemini_cli_termux() {
     echo -e "\n${CYAN}${BOLD}==== [自动安装 Gemini-CLI-Termux] ====${NC}"
     echo -e "${CYAN}${BOLD}>> 检查执行环境...${NC}"
     if [ -z "$PREFIX" ] || [[ "$PREFIX" != "/data/data/com.termux/files/usr" ]]; then
@@ -56,19 +56,19 @@ install_gemini_cli_api() {
         fi
     done
 
-    if [ -d "$GEMINI_CLI_API_DIR/.git" ]; then
+    if [ -d "$GEMINI_CLI_TERMUX_DIR/.git" ]; then
         echo -e "${YELLOW}${BOLD}>> 检测到 Gemini-CLI-Termux 仓库已存在，跳过克隆。${NC}"
     else
         echo -e "${CYAN}${BOLD}>> 克隆 Gemini-CLI-Termux 仓库...${NC}"
-        rm -rf "$GEMINI_CLI_API_DIR"
-        if ! git clone "$GEMINI_CLI_API_REPO" "$GEMINI_CLI_API_DIR"; then
+        rm -rf "$GEMINI_CLI_TERMUX_DIR"
+        if ! git clone "$GEMINI_CLI_TERMUX_REPO" "$GEMINI_CLI_TERMUX_DIR"; then
             echo -e "${RED}${BOLD}>> 仓库克隆失败，请检查网络连接。${NC}"
             exit 1
         fi
     fi
 
     echo -e "${CYAN}${BOLD}>> 进入 Gemini-CLI-Termux 目录...${NC}"
-    cd "$GEMINI_CLI_API_DIR" || { echo -e "${RED}${BOLD}>> 进入目录失败！${NC}"; exit 1; }
+    cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${RED}${BOLD}>> 进入目录失败！${NC}"; exit 1; }
 
     check_file_exists "requirements.txt"
     check_file_exists ".env"
@@ -104,7 +104,7 @@ check_port_in_use() {
 }
 
 get_env_port() {
-    cd "$GEMINI_CLI_API_DIR" 2>/dev/null || return
+    cd "$GEMINI_CLI_TERMUX_DIR" 2>/dev/null || return
     if [ -f ".env" ]; then
         grep "^PORT=" .env | head -n1 | cut -d'=' -f2 | xargs
     fi
@@ -112,7 +112,7 @@ get_env_port() {
 
 start_reverse_proxy() {
     echo -e "${CYAN}${BOLD}>> 尝试启动 Gemini-CLI-Termux 服务...${NC}"
-    cd "$GEMINI_CLI_API_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
+    cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
     check_file_exists "run.py"
     PORT="$(get_env_port)"
     if [ -n "$PORT" ]; then
@@ -126,16 +126,16 @@ start_reverse_proxy() {
 }
 
 relogin() {
-    echo -e "${CYAN}${BOLD}>> 开始重新认证流程...${NC}"
-    cd "$GEMINI_CLI_API_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
+    echo -e "${CYAN}${BOLD}>> 开始重新授权流程...${NC}"
+    cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
     rm -f oauth_creds.json
-    echo -e "${YELLOW}${BOLD}>> 已清理上次认证，准备重新认证...${NC}"
+    echo -e "${YELLOW}${BOLD}>> 已清理上次授权，准备重新授权...${NC}"
     start_reverse_proxy
 }
 
 change_env_keyvalue() {
     echo -e "${CYAN}${BOLD}>> 修改配置项 $1 ...${NC}"
-    cd "$GEMINI_CLI_API_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
+    cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
     check_file_exists ".env"
     old=$(grep "^$1=" .env | head -n1 | cut -d'=' -f2- | cut -d'#' -f1 | xargs)
     echo -e "${CYAN}${BOLD}$2 当前值：${YELLOW}${old}${NC}"
@@ -155,7 +155,7 @@ main_menu() {
         echo -e "${CYAN}${BOLD}==== Gemini-CLI-Termux 菜单 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 退出脚本${NC}"
         echo -e "${GREEN}${BOLD}1. 启动服务${NC}"
-        echo -e "${BLUE}${BOLD}2. 重新登录${NC}"
+        echo -e "${BLUE}${BOLD}2. 重新授权${NC}"
         echo -e "${MAGENTA}${BOLD}3. 修改密码${NC}"
         echo -e "${CYAN}${BOLD}4. 修改项目${NC}"
         echo -e "${WHITE}${BOLD}5. 修改端口${NC}"
@@ -176,10 +176,10 @@ main_menu() {
                 read -n1 confirm; echo
                 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                     cd "$HOME" || exit 1
-                    if [ -d "$GEMINI_CLI_API_DIR" ]; then
-                        rm -rf "$GEMINI_CLI_API_DIR"
+                    if [ -d "$GEMINI_CLI_TERMUX_DIR" ]; then
+                        rm -rf "$GEMINI_CLI_TERMUX_DIR"
                     fi
-                    install_gemini_cli_api
+                    install_gemini_cli_termux
                 else
                     echo -e "${CYAN}${BOLD}>> 已取消重新安装。${NC}"
                     press_any_key
@@ -190,8 +190,8 @@ main_menu() {
     done
 }
 
-if [ ! -d "$GEMINI_CLI_API_DIR/.git" ]; then
+if [ ! -d "$GEMINI_CLI_TERMUX_DIR/.git" ]; then
     echo -e "${YELLOW}${BOLD}未检测到 Gemini-CLI-Termux，自动开始安装...${NC}"
-    install_gemini_cli_api
+    install_gemini_cli_termux
 fi
 main_menu
