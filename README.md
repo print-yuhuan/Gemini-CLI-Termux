@@ -13,7 +13,7 @@
 在 Termux 中运行以下命令自动完成环境检测、依赖安装及服务部署：
 
 ```bash
-curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-Termux/main/Install.sh && bash Install.sh
+curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-Termux/main/Setup.sh && bash Setup.sh
 ```
 
 ## 📋 前置要求
@@ -91,7 +91,7 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-Termux/main/In
 
 ## 🙏 致谢
 
-- 核心功能来源：[gzzhongqi/geminicli2api](https://github.com/gzzhongqi/geminicli2api)
+- 核心功能来源：[geminicli2api](https://github.com/gzzhongqi/geminicli2api)
 
 ## 🤝 贡献
 
