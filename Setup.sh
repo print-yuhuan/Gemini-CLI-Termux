@@ -74,7 +74,6 @@ setup_font() {
 # 安装/初始化
 # =========================================================================
 install_gemini_cli_termux() {
-    echo -e "${CYAN}${BOLD}==== Gemini-CLI-Termux 安装 ====${NC}"
     # 步骤 1/8：环境检测
     echo -e "${BRIGHT_CYAN}${BOLD}==== 步骤 1/8：环境检测 ====${NC}"
     if [ -z "$PREFIX" ] || [[ "$PREFIX" != "/data/data/com.termux/files/usr" ]]; then
@@ -328,8 +327,8 @@ lan_config_menu() {
                 echo -e "  1. 确保服务已正确安装。"
                 echo -e "  2. 本机和其它访问设备需连接同一局域网（如同一个WiFi或热点）。\n"
                 echo -e "${CYAN}${BOLD}二、操作建议${NC}"
-                echo -e "  1. 开启监听（如已开启可跳过）"
-                echo -e "  2. 获取内网地址（如已知且无变动可跳过）"
+                echo -e "  1. 开启网络监听"
+                echo -e "  2. 获取内网地址"
                 echo -e "  3. 启动服务并保持窗口运行"
                 echo -e "  4. 其他设备输入上一步获取的网址访问\n"
                 echo -e "${CYAN}${BOLD}三、常见问题${NC}"
@@ -364,7 +363,7 @@ reverse_proxy_config_menu() {
             1) change_env_host ;;
             2) change_env_port ;;
             3) change_env_keyvalue "GOOGLE_CLOUD_PROJECT" "Google Cloud 项目ID" ;;
-            4) change_env_keyvalue "GEMINI_AUTH_PASSWORD" "API 接口访问密码" ;;
+            4) change_env_keyvalue "GEMINI_AUTH_PASSWORD" "API 接口访问秘钥" ;;
             5) lan_config_menu ;;
             *) echo -e "${BRIGHT_RED}${BOLD}>> 无效选项，请重新输入。${NC}"; sleep 1 ;;
         esac
@@ -508,7 +507,7 @@ main_menu() {
 # =========================================================================
 
 if [ ! -d "$GEMINI_CLI_TERMUX_DIR/.git" ]; then
-    echo -e "${YELLOW}${BOLD}未检测到 Gemini-CLI-Termux，自动开始安装...${NC}"
+    echo -e "${YELLOW}${BOLD}>> 未检测到 Gemini-CLI-Termux，自动开始安装...${NC}"
     install_gemini_cli_termux
 fi
 main_menu
