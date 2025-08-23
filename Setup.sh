@@ -160,7 +160,7 @@ main_menu() {
         echo -e "${CYAN}${BOLD}4. 修改项目${NC}"
         echo -e "${WHITE}${BOLD}5. 修改端口${NC}"
         echo -e "${RED}${BOLD}6. 重新安装${NC}"
-        echo -e "${CYAN}${BOLD}==================================${NC}"
+        echo -e "${CYAN}${BOLD}================================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-6）：${NC}"
         read -n1 choice; echo
         case "$choice" in
