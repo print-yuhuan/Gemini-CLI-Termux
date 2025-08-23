@@ -390,17 +390,17 @@ cloud_config_menu() {
             0) break ;;
             1)
                 echo -e "${BRIGHT_GREEN}${BOLD}>> 打开 Google Cloud 控制台...${NC}"
-                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fwelcome"
+                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fwelcome%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser"
                 press_any_key
                 ;;
             2)
                 echo -e "${BRIGHT_BLUE}${BOLD}>> 打开 Gemini for Google Cloud API 管理页...${NC}"
-                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fapis%2Flibrary%2Fcloudaicompanion.googleapis.com"
+                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fapis%2Flibrary%2Fcloudaicompanion.googleapis.com%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser"
                 press_any_key
                 ;;
             3)
                 echo -e "${BRIGHT_MAGENTA}${BOLD}>> 打开 Gemini Cloud Assist API 管理页...${NC}"
-                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fapis%2Fapi%2Fgeminicloudassist.googleapis.com"
+                termux-open-url "https://accounts.google.com/v3/signin/accountchooser?continue=https%3A%2F%2Fconsole.cloud.google.com%2Fapis%2Fapi%2Fgeminicloudassist.googleapis.com%3Fhl=zh_CN&service=cloudconsole&flowName=GlifWebSignIn&flowEntry=AccountChooser"
                 press_any_key
                 ;;
             *)
