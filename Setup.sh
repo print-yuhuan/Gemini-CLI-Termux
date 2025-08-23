@@ -33,7 +33,7 @@ install_gemini_cli_termux() {
 
     echo -e "${CYAN}${BOLD}>> 同步 Termux 镜像设置并更新系统...${NC}"
     ln -sf /data/data/com.termux/files/usr/etc/termux/mirrors/europe/packages.termux.dev /data/data/com.termux/files/usr/etc/termux/chosen_mirrors
-    if ! pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confnew"; then
+    if ! (pkg update && pkg upgrade -y -o Dpkg::Options::="--force-confnew"); then
         echo -e "${RED}${BOLD}>> 系统更新失败，请检查网络连接。${NC}"
         exit 1
     fi

@@ -3,6 +3,8 @@ Configuration constants for the Geminicli2api proxy server.
 Centralizes all configuration to avoid duplication across modules.
 """
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # API Endpoints
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
