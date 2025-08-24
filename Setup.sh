@@ -416,17 +416,20 @@ maintenance_menu() {
             1)
                 echo -e "${BRIGHT_GREEN}${BOLD}>> 正在拉取 Gemini-CLI-Termux 最新代码并安装依赖...${NC}"
                 cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${BRIGHT_RED}${BOLD}>> 目录不存在。${NC}"; press_any_key; continue; }
-                if git status --porcelain | grep -q "^ M .env"; then
-                    echo -e "${YELLOW}${BOLD}>> 检测到本地 .env 已修改，自动暂存以防丢失...${NC}"
-                    git stash push .env
-                    git pull --rebase
-                    git stash pop || echo -e "${YELLOW}${BOLD}>> .env 已安全保留。${NC}"
-                else
-                    git pull --rebase
-                fi
+
+                if [ -f .env ]; then cp .env .env.bak; fi
+                if [ -f oauth_creds.json ]; then cp oauth_creds.json oauth_creds.json.bak; fi
+
+                git fetch origin
+                git reset --hard origin/main
+
+                if [ -f .env.bak ]; then mv -f .env.bak .env; fi
+                if [ -f oauth_creds.json.bak ]; then mv -f oauth_creds.json.bak oauth_creds.json; fi
+
                 python -m pip install -r requirements.txt \
                     && echo -e "${BRIGHT_GREEN}${BOLD}>> 更新完成。${NC}" \
                     || echo -e "${BRIGHT_RED}${BOLD}>> 更新失败，请检查网络。${NC}"
+
                 press_any_key
                 ;;
             2)
