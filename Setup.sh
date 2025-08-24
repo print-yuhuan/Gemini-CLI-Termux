@@ -190,6 +190,7 @@ start_reverse_proxy() {
             return
         fi
     fi
+    pkill -f "python run.py"
     python run.py
     echo -e "${CYAN}${BOLD}==================${NC}"
 }
