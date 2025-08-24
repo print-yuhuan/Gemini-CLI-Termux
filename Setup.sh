@@ -78,7 +78,7 @@ install_gemini_cli_termux() {
     done
     echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 3/8 完成：依赖已安装。${NC}"
 
-    # 步骤 4/8：终端字体配置（原地展开）
+    # 步骤 4/8：终端字体配置
     echo -e "${CYAN}${BOLD}==== 步骤 4/8：终端字体配置 ====${NC}"
     mkdir -p "$FONT_DIR"
     if [ -f "$FONT_PATH" ]; then
@@ -125,8 +125,8 @@ install_gemini_cli_termux() {
     check_file_exists "run.py"
     echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 6/8 完成：关键文件检测通过。${NC}"
 
-    # 步骤 7/8：配置自动启动
-    echo -e "\n${CYAN}${BOLD}==== 步骤 7/8：配置自动启动 ====${NC}"
+    # 步骤 7/8：配置菜单自启动
+    echo -e "\n${CYAN}${BOLD}==== 步骤 7/8：配置菜单自启动 ====${NC}"
     PROFILE_FILE=""
     for pf in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
         if [ -f "$pf" ]; then
@@ -139,13 +139,15 @@ install_gemini_cli_termux() {
     fi
     touch "$PROFILE_FILE"
     if ! grep -qE 'bash[ ]+\$HOME/Gemini-CLI-Termux/Setup\.sh' "$PROFILE_FILE"; then
-        echo '' >> "$PROFILE_FILE"
-        echo '# Gemini-CLI-Termux 启动菜单自启动' >> "$PROFILE_FILE"
+        if [ -s "$PROFILE_FILE" ]; then
+            echo '' >> "$PROFILE_FILE"
+        fi
+        echo '# Gemini-CLI-Termux 菜单自启动' >> "$PROFILE_FILE"
         echo 'bash $HOME/Gemini-CLI-Termux/Setup.sh' >> "$PROFILE_FILE"
         echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置自启动，后续每次启动 Termux 将自动弹出菜单。${NC}"
     else
-        echo -e "${YELLOW}${BOLD}>> 自启动已配置，无需重复添加。${NC}"
-        echo -e "${YELLOW}${BOLD}>> 步骤 7/8 跳过：自启动菜单已存在。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 菜单自启动已配置，无需重复添加。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 步骤 7/8 跳过：菜单自启动已存在。${NC}"
     fi
 
     # 步骤 8/8：安装 Python 依赖
