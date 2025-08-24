@@ -29,7 +29,6 @@ FONT_PATH="$FONT_DIR/font.ttf"
 # =========================================================================
 # 通用函数
 # =========================================================================
-
 press_any_key() { echo -e "${CYAN}${BOLD}>> 按任意键返回菜单...${NC}"; read -n1 -s; }
 
 check_file_exists() {
@@ -37,36 +36,6 @@ check_file_exists() {
         echo -e "${BRIGHT_RED}${BOLD}>> 缺少关键文件：$1，请检查仓库完整性。${NC}"
         press_any_key
         exit 1
-    fi
-}
-
-# =========================================================================
-# 字体配置
-# =========================================================================
-setup_font() {
-    echo -e "${CYAN}${BOLD}==== 终端字体配置 ====${NC}"
-    mkdir -p "$FONT_DIR"
-    if [ -f "$FONT_PATH" ]; then
-        echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
-    else
-        if curl -L --progress-bar -o "$FONT_PATH" "$FONT_URL"; then
-            echo -e "${BRIGHT_GREEN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
-        else
-            echo -e "${BRIGHT_RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
-            echo -e "${YELLOW}${BOLD}>> 步骤 4/8 跳过：字体未配置成功。${NC}"
-            return
-        fi
-    fi
-
-    if [ -f "$FONT_PATH" ]; then
-        if command -v termux-reload-settings >/dev/null 2>&1; then
-            termux-reload-settings \
-            && echo -e "${BRIGHT_GREEN}${BOLD}>> 配置已自动刷新，字体已生效。${NC}" \
-            || echo -e "${YELLOW}${BOLD}>> 尝试刷新配置失败，请手动重启 Termux。${NC}"
-        else
-            echo -e "${YELLOW}${BOLD}>> 未检测到 termux-reload-settings，请手动重启 Termux 使字体生效。${NC}"
-        fi
-        echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 4/8 完成：终端字体已配置。${NC}"
     fi
 }
 
@@ -109,8 +78,30 @@ install_gemini_cli_termux() {
     done
     echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 3/8 完成：依赖已安装。${NC}"
 
-    # 步骤 4/8：配置字体
-    setup_font
+    # 步骤 4/8：终端字体配置（原地展开）
+    echo -e "${CYAN}${BOLD}==== 步骤 4/8：终端字体配置 ====${NC}"
+    mkdir -p "$FONT_DIR"
+    if [ -f "$FONT_PATH" ]; then
+        echo -e "${YELLOW}${BOLD}>> 字体文件已存在，跳过下载。${NC}"
+    else
+        if curl -L --progress-bar -o "$FONT_PATH" "$FONT_URL"; then
+            echo -e "${BRIGHT_GREEN}${BOLD}>> 字体已下载并保存为 .termux/font.ttf${NC}"
+        else
+            echo -e "${BRIGHT_RED}${BOLD}>> 字体下载失败，请检查网络或稍后重试。${NC}"
+            echo -e "${YELLOW}${BOLD}>> 步骤 4/8 跳过：字体未配置成功。${NC}"
+        fi
+    fi
+
+    if [ -f "$FONT_PATH" ]; then
+        if command -v termux-reload-settings >/dev/null 2>&1; then
+            termux-reload-settings \
+            && echo -e "${BRIGHT_GREEN}${BOLD}>> 配置已自动刷新，字体已生效。${NC}" \
+            || echo -e "${YELLOW}${BOLD}>> 尝试刷新配置失败，请手动重启 Termux。${NC}"
+        else
+            echo -e "${YELLOW}${BOLD}>> 未检测到 termux-reload-settings，请手动重启 Termux 使字体生效。${NC}"
+        fi
+        echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 4/8 完成：终端字体已配置。${NC}"
+    fi
 
     # 步骤 5/8：克隆仓库
     echo -e "${BRIGHT_CYAN}${BOLD}==== 步骤 5/8：克隆 Gemini-CLI-Termux 仓库 ====${NC}"
@@ -134,8 +125,31 @@ install_gemini_cli_termux() {
     check_file_exists "run.py"
     echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 6/8 完成：关键文件检测通过。${NC}"
 
-    # 步骤 7/8：检查或安装 pip
-    echo -e "${BRIGHT_CYAN}${BOLD}==== 步骤 7/8：检查或安装 pip ====${NC}"
+    # 步骤 7/8：配置自动启动
+    echo -e "\n${CYAN}${BOLD}==== 步骤 7/8：配置自动启动 ====${NC}"
+    PROFILE_FILE=""
+    for pf in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+        if [ -f "$pf" ]; then
+            PROFILE_FILE="$pf"
+            break
+        fi
+    done
+    if [ -z "$PROFILE_FILE" ]; then
+        PROFILE_FILE="$HOME/.bashrc"
+    fi
+    touch "$PROFILE_FILE"
+    if ! grep -qE 'bash[ ]+\$HOME/Gemini-CLI-Termux/Setup\.sh' "$PROFILE_FILE"; then
+        echo '' >> "$PROFILE_FILE"
+        echo '# Gemini-CLI-Termux 启动菜单自启动' >> "$PROFILE_FILE"
+        echo 'bash $HOME/Gemini-CLI-Termux/Setup.sh' >> "$PROFILE_FILE"
+        echo -e "${GREEN}${BOLD}>> 步骤 7/8 完成：已配置自启动，后续每次启动 Termux 将自动弹出菜单。${NC}"
+    else
+        echo -e "${YELLOW}${BOLD}>> 自启动已配置，无需重复添加。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 步骤 7/8 跳过：自启动菜单已存在。${NC}"
+    fi
+
+    # 步骤 8/8：安装 Python 依赖
+    echo -e "${BRIGHT_CYAN}${BOLD}==== 步骤 8/8：安装 Python 依赖 ====${NC}"
     if ! python -m pip --version >/dev/null 2>&1; then
         pkg install -y python-pip
         if ! python -m pip --version >/dev/null 2>&1; then
@@ -143,16 +157,13 @@ install_gemini_cli_termux() {
             exit 1
         fi
     fi
-    echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 7/8 完成：pip 已就绪。${NC}"
-
-    # 步骤 8/8：安装 Python 依赖
-    echo -e "${BRIGHT_CYAN}${BOLD}==== 步骤 8/8：安装 Python 依赖 ====${NC}"
     if python -m pip install -r requirements.txt; then
         echo -e "${BRIGHT_GREEN}${BOLD}>> 步骤 8/8 完成：依赖已安装。${NC}"
     else
         echo -e "${BRIGHT_RED}${BOLD}>> Python 依赖安装失败！${NC}"
         exit 1
     fi
+
     echo -e "${BRIGHT_GREEN}${BOLD}==== Gemini-CLI-Termux 安装及初始化完成！=====${NC}"
     press_any_key
 }
@@ -160,7 +171,6 @@ install_gemini_cli_termux() {
 # =========================================================================
 # 启动服务与授权
 # =========================================================================
-
 get_env_value() {
     cd "$GEMINI_CLI_TERMUX_DIR" 2>/dev/null || return
     if [ -f ".env" ]; then
@@ -168,28 +178,10 @@ get_env_value() {
     fi
 }
 
-check_port_in_use() {
-    if command -v lsof >/dev/null 2>&1; then
-        lsof -i :"$1" | grep LISTEN >/dev/null 2>&1 && return 0 || return 1
-    elif command -v netstat >/dev/null 2>&1; then
-        netstat -an | grep "LISTEN" | grep ":$1 " >/dev/null 2>&1 && return 0 || return 1
-    else
-        return 1
-    fi
-}
-
 start_reverse_proxy() {
     echo -e "${CYAN}${BOLD}==== 启动服务 ====${NC}"
     cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${BRIGHT_RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
     check_file_exists "run.py"
-    PORT="$(get_env_value PORT)"
-    if [ -n "$PORT" ]; then
-        if check_port_in_use "$PORT"; then
-            echo -e "${BRIGHT_RED}${BOLD}>> 端口 $PORT 已被占用，请修改端口或释放后重试。${NC}"
-            press_any_key
-            return
-        fi
-    fi
     pkill -f "python run.py"
     python run.py
     echo -e "${CYAN}${BOLD}==================${NC}"
@@ -205,9 +197,8 @@ relogin() {
 }
 
 # =========================================================================
-# 反代配置（含局域网配置）
+# 修改配置
 # =========================================================================
-
 change_env_host() {
     echo -e "${CYAN}${BOLD}==== 修改监听地址 ====${NC}"
     cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${BRIGHT_RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
@@ -236,12 +227,12 @@ change_env_host() {
 }
 
 change_env_port() {
-    echo -e "${CYAN}${BOLD}==== 修改服务端口 ====${NC}"
+    echo -e "${CYAN}${BOLD}==== 修改监听端口 ====${NC}"
     cd "$GEMINI_CLI_TERMUX_DIR" || { echo -e "${BRIGHT_RED}${BOLD}>> 未找到 Gemini-CLI-Termux 目录。${NC}"; press_any_key; return; }
     check_file_exists ".env"
     old=$(grep "^PORT=" .env | head -n1 | cut -d'=' -f2- | cut -d'#' -f1 | xargs)
     while true; do
-        echo -e "${BRIGHT_CYAN}${BOLD}服务端口当前值：${YELLOW}${old}${NC}"
+        echo -e "${BRIGHT_CYAN}${BOLD}监听端口当前值：${YELLOW}${old}${NC}"
         echo -ne "${BRIGHT_CYAN}${BOLD}请输入新的端口（1-65535，留空取消）：${NC}"
         read ans
         [ -z "$ans" ] && echo -e "${YELLOW}${BOLD}>> 未修改。${NC}" && press_any_key && echo -e "${CYAN}${BOLD}==================${NC}" && return
@@ -249,14 +240,10 @@ change_env_port() {
             echo -e "${BRIGHT_RED}${BOLD}>> 端口格式无效，请输入 1-65535 的数字。${NC}"
             continue
         fi
-        if check_port_in_use "$ans"; then
-            echo -e "${BRIGHT_RED}${BOLD}>> 端口 $ans 已被占用，请换一个端口。${NC}"
-            continue
-        fi
         break
     done
     sed -i "s/^PORT=.*/PORT=$ans/" .env
-    echo -e "${BRIGHT_GREEN}${BOLD}>> 服务端口已更新为：$ans${NC}"
+    echo -e "${BRIGHT_GREEN}${BOLD}>> 监听端口已更新为：$ans${NC}"
     echo -e "${CYAN}${BOLD}======================${NC}"
     press_any_key
 }
@@ -274,20 +261,20 @@ change_env_keyvalue() {
     else
         echo -e "${YELLOW}${BOLD}>> 未修改。${NC}"
     fi
-    echo -e "${CYAN}${BOLD}===============================${NC}"
+    echo -e "${CYAN}${BOLD}======================${NC}"
     press_any_key
 }
 
 lan_config_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 局域网项 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级${NC}"
-        echo -e "${BRIGHT_GREEN}${BOLD}1. 开启监听${NC}"
-        echo -e "${BRIGHT_RED}${BOLD}2. 关闭监听${NC}"
-        echo -e "${BRIGHT_BLUE}${BOLD}3. 获取地址${NC}"
-        echo -e "${BRIGHT_CYAN}${BOLD}4. 连接帮助${NC}"
-        echo -e "${CYAN}${BOLD}==================${NC}"
+        echo -e "${CYAN}${BOLD}==== 局域网配置项 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${BRIGHT_GREEN}${BOLD}1. 开启网络监听${NC}"
+        echo -e "${BRIGHT_RED}${BOLD}2. 关闭网络监听${NC}"
+        echo -e "${BRIGHT_BLUE}${BOLD}3. 获取内网地址${NC}"
+        echo -e "${BRIGHT_CYAN}${BOLD}4. 获取连接帮助${NC}"
+        echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${BRIGHT_CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 lan_choice; echo
         case "$lan_choice" in
@@ -349,13 +336,13 @@ lan_config_menu() {
 reverse_proxy_config_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 反代配置 ====${NC}"
-        echo -e "${YELLOW}${BOLD}0. 返回上级${NC}"
-        echo -e "${BRIGHT_BLUE}${BOLD}1. 修改地址${NC}"
-        echo -e "${BRIGHT_GREEN}${BOLD}2. 修改端口${NC}"
-        echo -e "${BRIGHT_MAGENTA}${BOLD}3. 修改项目${NC}"
-        echo -e "${BRIGHT_CYAN}${BOLD}4. 修改密码${NC}"
-        echo -e "${BRIGHT_RED}${BOLD}5. 局域网项${NC}"
+        echo -e "${CYAN}${BOLD}==== 修改配置 ====${NC}"
+        echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
+        echo -e "${BRIGHT_BLUE}${BOLD}1. 修改监听地址${NC}"
+        echo -e "${BRIGHT_GREEN}${BOLD}2. 修改监听端口${NC}"
+        echo -e "${BRIGHT_MAGENTA}${BOLD}3. 修改项目标识${NC}"
+        echo -e "${BRIGHT_CYAN}${BOLD}4. 修改连接秘钥${NC}"
+        echo -e "${BRIGHT_RED}${BOLD}5. 局域网配置项${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${BRIGHT_CYAN}${BOLD}请选择操作（0-5）：${NC}"
         read -n1 rev_choice; echo
@@ -372,13 +359,12 @@ reverse_proxy_config_menu() {
 }
 
 # =========================================================================
-# 云端配置
+# 谷歌云项
 # =========================================================================
-
 cloud_config_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 云端配置 ====${NC}"
+        echo -e "${CYAN}${BOLD}==== 谷歌云项 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级${NC}"
         echo -e "${BRIGHT_GREEN}${BOLD}1. 获取 Google Cloud 项目ID${NC}"
         echo -e "${BRIGHT_BLUE}${BOLD}2. 管理 Gemini for Google Cloud${NC}"
@@ -410,15 +396,14 @@ cloud_config_menu() {
 }
 
 # =========================================================================
-# 系统维护
+# 系统管理
 # =========================================================================
-
 maintenance_menu() {
     while true; do
         clear
-        echo -e "${CYAN}${BOLD}==== 系统维护 ====${NC}"
+        echo -e "${CYAN}${BOLD}==== 系统管理 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级${NC}"
-        echo -e "${BRIGHT_GREEN}${BOLD}1. 更新反代${NC}"
+        echo -e "${BRIGHT_GREEN}${BOLD}1. 更新服务${NC}"
         echo -e "${BRIGHT_BLUE}${BOLD}2. 重新部署${NC}"
         echo -e "${BRIGHT_RED}${BOLD}3. 卸载服务${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
@@ -477,7 +462,6 @@ maintenance_menu() {
 # =========================================================================
 # 主菜单
 # =========================================================================
-
 main_menu() {
     while true; do
         clear
@@ -485,9 +469,9 @@ main_menu() {
         echo -e "${YELLOW}${BOLD}0. 退出脚本${NC}"
         echo -e "${BRIGHT_GREEN}${BOLD}1. 启动服务${NC}"
         echo -e "${BRIGHT_BLUE}${BOLD}2. 重新授权${NC}"
-        echo -e "${BRIGHT_MAGENTA}${BOLD}3. 反代配置${NC}"
-        echo -e "${BRIGHT_CYAN}${BOLD}4. 云端配置${NC}"
-        echo -e "${BRIGHT_RED}${BOLD}5. 系统维护${NC}"
+        echo -e "${BRIGHT_MAGENTA}${BOLD}3. 修改配置${NC}"
+        echo -e "${BRIGHT_CYAN}${BOLD}4. 谷歌云项${NC}"
+        echo -e "${BRIGHT_RED}${BOLD}5. 系统管理${NC}"
         echo -e "${CYAN}${BOLD}================================${NC}"
         echo -ne "${BRIGHT_CYAN}${BOLD}请选择操作（0-5）：${NC}"
         read -n1 choice; echo
@@ -506,7 +490,6 @@ main_menu() {
 # =========================================================================
 # 启动入口
 # =========================================================================
-
 if [ ! -d "$GEMINI_CLI_TERMUX_DIR/.git" ]; then
     echo -e "${YELLOW}${BOLD}>> 未检测到 Gemini-CLI-Termux，自动开始安装...${NC}"
     install_gemini_cli_termux
