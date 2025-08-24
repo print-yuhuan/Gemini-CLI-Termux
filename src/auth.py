@@ -392,8 +392,6 @@ def get_credentials(allow_oauth_flow=True):
         prompt="consent",
         include_granted_scopes='true'
     )
-    print(f"\n{'='*56}")
-    print(f"身份验证")
     print(f"{'='*56}")
     print(f"请在浏览器中打开以下链接完成登录：")
     print(f"{auth_url}")
