@@ -103,4 +103,4 @@ curl -O https://raw.githubusercontent.com/print-yuhuan/Gemini-CLI-Termux/main/Se
 
 ---
 
-*最后更新：2025年8月21日*
+*最后更新：2025年8月26日*
