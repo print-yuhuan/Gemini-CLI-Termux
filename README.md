@@ -1,6 +1,6 @@
 # Gemini-CLI-Termux 自动化部署工具
 
-> ⚠️ 本项目基于 [gzzhongqi/geminicli2api](https://github.com/gzzhongqi/geminicli2api) 进行二次开发，提供 Termux 环境下的自动化部署和管理功能。
+> ⚠️ 本项目基于 [geminicli2api](https://github.com/gzzhongqi/geminicli2api) 进行二次开发，提供 Termux 环境下的自动化部署和管理功能。
 
 ## 📌 项目简介
 
