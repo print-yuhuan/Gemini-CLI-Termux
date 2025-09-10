@@ -18,6 +18,7 @@ from .config import (
     CLIENT_ID, CLIENT_SECRET, SCOPES, CREDENTIAL_FILE,
     CODE_ASSIST_ENDPOINT, GEMINI_AUTH_PASSWORD
 )
+from .web_ui import track_api_call
 
 # --- Global State ---
 credentials = None
@@ -75,6 +76,12 @@ def authenticate_user(request: Request):
             pass
     
     # If none of the authentication methods work
+    track_api_call(
+        success=False,
+        endpoint=str(request.url.path),
+        error_message="Invalid authentication credentials",
+        status_code=401
+    )
     raise HTTPException(
         status_code=401,
         detail="Invalid authentication credentials. Use HTTP Basic Auth, Bearer token, 'key' query parameter, or 'x-goog-api-key' header.",

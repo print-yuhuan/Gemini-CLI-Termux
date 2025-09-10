@@ -18,6 +18,7 @@ from .openai_transformers import (
     gemini_stream_chunk_to_openai
 )
 from .google_api_client import send_gemini_request, build_gemini_payload_from_openai
+from .web_ui import track_api_call
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ async def openai_chat_completions(
         
     except Exception as e:
         logging.error(f"Error processing OpenAI request: {str(e)}")
+        track_api_call(success=False, endpoint="/v1/chat/completions", error_message=str(e), status_code=400)
         return Response(
             content=json.dumps({
                 "error": {
@@ -80,6 +82,7 @@ async def openai_chat_completions(
                                 # Check if this is an error chunk
                                 if "error" in gemini_chunk:
                                     logging.error(f"Error in streaming response: {gemini_chunk['error']}")
+                                    track_api_call(success=False, endpoint="/v1/chat/completions", error_message=gemini_chunk["error"].get("message", "Unknown error"), status_code=gemini_chunk["error"].get("code", 500))
                                     # Transform error to OpenAI format
                                     error_data = {
                                         "error": {
@@ -110,6 +113,7 @@ async def openai_chat_completions(
                     # Send the final [DONE] marker
                     yield "data: [DONE]\n\n"
                     logging.info(f"Completed streaming response: {response_id}")
+                    track_api_call(success=True, endpoint="/v1/chat/completions", status_code=200)
                 else:
                     # Error case - handle Response object with error
                     error_msg = "Streaming request failed"
@@ -132,6 +136,7 @@ async def openai_chat_completions(
                             pass
                     
                     logging.error(f"Streaming request failed: {error_msg}")
+                    track_api_call(success=False, endpoint="/v1/chat/completions", error_message=error_msg, status_code=status_code)
                     error_data = {
                         "error": {
                             "message": error_msg,
@@ -143,6 +148,7 @@ async def openai_chat_completions(
                     yield "data: [DONE]\n\n"
             except Exception as e:
                 logging.error(f"Streaming error: {str(e)}")
+                track_api_call(success=False, endpoint="/v1/chat/completions", error_message=str(e), status_code=500)
                 error_data = {
                     "error": {
                         "message": f"Streaming failed: {str(e)}",
@@ -210,10 +216,12 @@ async def openai_chat_completions(
                 openai_response = gemini_response_to_openai(gemini_response, request.model)
                 
                 logging.info(f"Successfully processed non-streaming response for model: {request.model}")
+                track_api_call(success=True, endpoint="/v1/chat/completions", status_code=response.status_code)
                 return openai_response
                 
             except (json.JSONDecodeError, AttributeError) as e:
                 logging.error(f"Failed to parse Gemini response: {str(e)}")
+                track_api_call(success=False, endpoint="/v1/chat/completions", error_message=str(e), status_code=500)
                 return Response(
                     content=json.dumps({
                         "error": {
@@ -227,6 +235,7 @@ async def openai_chat_completions(
                 )
         except Exception as e:
             logging.error(f"Non-streaming request failed: {str(e)}")
+            track_api_call(success=False, endpoint="/v1/chat/completions", error_message=str(e))
             return Response(
                 content=json.dumps({
                     "error": {
@@ -282,14 +291,15 @@ async def openai_list_models(username: str = Depends(authenticate_user)):
                 "parent": None
             })
         
-        logging.info(f"Returning {len(openai_models)} models")
+        track_api_call(success=True, endpoint="/v1/models", status_code=200)
         return {
             "object": "list",
             "data": openai_models
         }
         
     except Exception as e:
-        logging.error(f"Failed to list models: {str(e)}")
+        logging.error(f"Failed to list OpenAI models: {str(e)}")
+        track_api_call(success=False, endpoint="/v1/models", error_message=str(e), status_code=500)
         return Response(
             content=json.dumps({
                 "error": {
@@ -301,5 +311,3 @@ async def openai_list_models(username: str = Depends(authenticate_user)):
             status_code=500,
             media_type="application/json"
         )
-
-

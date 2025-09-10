@@ -4,3 +4,4 @@ requests
 python-dotenv
 google-auth-oauthlib
 pydantic<2.0
+jinja2

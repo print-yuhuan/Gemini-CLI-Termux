@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, Response, Depends
 from .auth import authenticate_user
 from .google_api_client import send_gemini_request, build_gemini_payload_from_native
 from .config import SUPPORTED_MODELS
+from .web_ui import track_api_call
 
 router = APIRouter()
 
@@ -29,6 +30,7 @@ async def gemini_list_models(request: Request, username: str = Depends(authentic
         }
         
         logging.info(f"Returning {len(SUPPORTED_MODELS)} Gemini models")
+        track_api_call(success=True, endpoint="/v1beta/models", status_code=200)
         return Response(
             content=json.dumps(models_response),
             status_code=200,
@@ -36,6 +38,7 @@ async def gemini_list_models(request: Request, username: str = Depends(authentic
         )
     except Exception as e:
         logging.error(f"Failed to list Gemini models: {str(e)}")
+        track_api_call(success=False, endpoint="/v1beta/models", error_message=str(e), status_code=500)
         return Response(
             content=json.dumps({
                 "error": {
@@ -48,7 +51,8 @@ async def gemini_list_models(request: Request, username: str = Depends(authentic
         )
 
 
-@router.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@router.api_route("/v1beta/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@router.api_route("/v1/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def gemini_proxy(request: Request, full_path: str, username: str = Depends(authenticate_user)):
     """
     Native Gemini API proxy endpoint.
@@ -59,6 +63,8 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
     - /v1beta/models/{model}/streamGenerateContent
     - /v1/models/{model}/generateContent
     - etc.
+    
+    Note: Only handles paths starting with /v1beta/ or /v1/
     """
     
     try:
@@ -76,6 +82,7 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
         
         if not model_name:
             logging.error(f"Could not extract model name from path: {full_path}")
+            track_api_call(success=False, endpoint=full_path, error_message=f"Could not extract model name from path: {full_path}", status_code=400)
             return Response(
                 content=json.dumps({
                     "error": {
@@ -95,6 +102,7 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
                 incoming_request = {}
         except json.JSONDecodeError as e:
             logging.error(f"Invalid JSON in request body: {str(e)}")
+            track_api_call(success=False, endpoint=full_path, error_message=f"Invalid JSON in request body: {str(e)}", status_code=400)
             return Response(
                 content=json.dumps({
                     "error": {
@@ -116,13 +124,16 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
         if hasattr(response, 'status_code'):
             if response.status_code != 200:
                 logging.error(f"Gemini API returned error: status={response.status_code}")
+                track_api_call(success=False, endpoint=full_path, error_message=f"Gemini API error: status={response.status_code}", status_code=response.status_code)
             else:
                 logging.info(f"Successfully processed Gemini request for model: {model_name}")
+                track_api_call(success=True, endpoint=full_path, status_code=response.status_code)
         
         return response
         
     except Exception as e:
         logging.error(f"Gemini proxy error: {str(e)}")
+        track_api_call(success=False, endpoint=full_path, error_message=str(e), status_code=500)
         return Response(
             content=json.dumps({
                 "error": {
@@ -175,6 +186,44 @@ async def gemini_list_models_v1(request: Request, username: str = Depends(authen
     Some clients might use /v1/models instead of /v1beta/models.
     """
     return await gemini_list_models(request, username)
+
+
+# Catch-all route for invalid Gemini API paths - temporarily disabled for favicon testing
+# @router.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+# async def invalid_gemini_path(request: Request, full_path: str):
+#     """
+#     Handle invalid Gemini API paths that don't match the expected patterns.
+#     """
+#     # Skip authentication for favicon.ico
+#     if full_path == "favicon.ico":
+#         from fastapi.responses import FileResponse
+#         import os
+#         
+#         # Check if favicon exists in static directory
+#         static_dir = os.path.join(os.path.dirname(__file__), "static")
+#         favicon_path = os.path.join(static_dir, "favicon.ico")
+#         
+#         if os.path.exists(favicon_path):
+#             return FileResponse(favicon_path)
+#         else:
+#             return Response(status_code=404)
+#     
+#     # For all other paths, require authentication
+#     from .auth import authenticate_user
+#     username = await authenticate_user(request)
+#     
+#     logging.warning(f"Invalid Gemini API path attempted: {full_path}")
+#     return Response(
+#         content=json.dumps({
+#             "error": {
+#                 "message": f"Invalid Gemini API path: /{full_path}. Valid paths start with /v1beta/ or /v1/",
+#                 "code": 404,
+#                 "type": "invalid_request_error"
+#             }
+#         }),
+#         status_code=404,
+#         media_type="application/json"
+#     )
 
 
 # Health check endpoint

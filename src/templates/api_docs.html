@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 文档 - Gemini-CLI-Termux</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --success-color: #0f9d58;
+            --warning-color: #f4b400;
+            --danger-color: #db4437;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #202124;
+            --text-muted: #5f6368;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e8eaed 50%, #dadce0 100%);
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .endpoint-card {
+            transition: all 0.3s ease;
+        }
+        
+        .endpoint-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .badge-endpoint {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--text-muted);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: rgba(26, 115, 232, 0.15);
+            color: var(--primary-color);
+            border: none;
+        }
+        
+        .back-btn {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin" style="display: flex; align-items: center;">
+                <img src="/static/favicon.ico" alt="Logo" width="32" height="32" class="me-2" style="margin-top: -2px;">
+                Gemini-CLI-Termux API 文档
+            </a>
+            <button class="btn back-btn" onclick="window.history.back()">
+                <i class="bi bi-arrow-left"></i> 返回控制台
+            </button>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="mb-4">📚 Gemini-CLI-Termux API 文档</h2>
+                        
+                        <div class="alert alert-primary">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>认证信息：</strong>所有API端点（除特殊说明外）都需要Basic认证，用户名：<code>admin</code>，密码：<code>GEMINI_AUTH_PASSWORD</code>环境变量值（默认：123）
+                        </div>
+
+                        <ul class="nav nav-tabs mb-4" id="apiTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="openai-tab" data-bs-toggle="tab" data-bs-target="#openai" type="button" role="tab">
+                                    <i class="bi bi-chat-dots"></i> OpenAI兼容接口
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="gemini-tab" data-bs-toggle="tab" data-bs-target="#gemini" type="button" role="tab">
+                                    <i class="bi bi-google"></i> 原生Gemini接口
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="management-tab" data-bs-toggle="tab" data-bs-target="#management" type="button" role="tab">
+                                    <i class="bi bi-gear"></i> 管理接口
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="apiTabsContent">
+                            <!-- OpenAI Compatible APIs -->
+                            <div class="tab-pane fade show active" id="openai" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">聊天补全</h5>
+                                                    <span class="badge bg-success badge-endpoint">POST</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/v1/chat/completions</code>
+                                                <p class="card-text">提供与OpenAI兼容的聊天补全接口，支持流式输出。</p>
+                                                
+                                                <h6 class="mt-4">请求示例：</h6>
+                                                <div class="code-block">
+curl -X POST http://localhost:8888/v1/chat/completions \\<br>
+  -H "Content-Type: application/json" \\<br>
+  -H "Authorization: Basic YWRtaW46MTIz" \\<br>
+  -d '{<br>
+    "model": "gemini-2.5-pro",<br>
+    "messages": [<br>
+      {"role": "user", "content": "Hello!"}<br>
+    ],<br>
+    "temperature": 0.7,<br>
+    "max_tokens": 1000<br>
+  }'
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">模型列表</h5>
+                                                    <span class="badge bg-primary badge-endpoint">GET</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/v1/models</code>
+                                                <p class="card-text">获取支持的模型列表信息。</p>
+                                                
+                                                <h6 class="mt-4">请求示例：</h6>
+                                                <div class="code-block">
+curl -X GET http://localhost:8888/v1/models \\<br>
+  -H "Authorization: Basic YWRtaW46MTIz"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Native Gemini APIs -->
+                            <div class="tab-pane fade" id="gemini" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">模型详情</h5>
+                                                    <span class="badge bg-primary badge-endpoint">GET</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/v1beta/models</code>
+                                                <p class="card-text">获取详细的Gemini模型信息。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">内容生成</h5>
+                                                    <span class="badge bg-success badge-endpoint">POST</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/v1beta/models/{model}/generateContent</code>
+                                                <p class="card-text">使用指定Gemini模型生成内容。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">流式生成</h5>
+                                                    <span class="badge bg-success badge-endpoint">POST</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/v1beta/models/{model}/streamGenerateContent</code>
+                                                <p class="card-text">流式生成内容。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Management APIs -->
+                            <div class="tab-pane fade" id="management" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">健康检查</h5>
+                                                    <span class="badge bg-primary badge-endpoint">GET</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/health</code>
+                                                <p class="card-text">服务健康状态检查（无需认证）。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">控制面板</h5>
+                                                    <span class="badge bg-primary badge-endpoint">GET</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/admin</code>
+                                                <p class="card-text">Web管理界面（无需认证）。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">API统计</h5>
+                                                    <span class="badge bg-primary badge-endpoint">GET</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/admin/api/stats</code>
+                                                <p class="card-text">获取API调用统计数据。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card endpoint-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h5 class="card-title">重置统计</h5>
+                                                    <span class="badge bg-warning text-dark badge-endpoint">POST</span>
+                                                </div>
+                                                <code class="text-primary d-block mb-3">/admin/api/clear</code>
+                                                <p class="card-text">重置所有统计信息和历史记录。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5">
+                            <h4 class="mb-3">📋 支持模型列表</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-group">
+                                        <li class="list-group-item">gemini-2.5-pro</li>
+                                        <li class="list-group-item">gemini-2.5-pro-search</li>
+                                        <li class="list-group-item">gemini-2.5-pro-nothinking</li>
+                                        <li class="list-group-item">gemini-2.5-pro-maxthinking</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-group">
+                                        <li class="list-group-item">gemini-2.5-flash</li>
+                                        <li class="list-group-item">gemini-2.5-flash-search</li>
+                                        <li class="list-group-item">gemini-2.5-flash-nothinking</li>
+                                        <li class="list-group-item">gemini-2.5-flash-maxthinking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5">
+                            <h4 class="mb-3">⚙️ 环境配置</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>环境变量</th>
+                                            <th>描述</th>
+                                            <th>默认值</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>HOST</code></td>
+                                            <td>服务监听地址</td>
+                                            <td>127.0.0.1</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>PORT</code></td>
+                                            <td>服务监听端口</td>
+                                            <td>8888</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>GEMINI_AUTH_PASSWORD</code></td>
+                                            <td>API访问密码</td>
+                                            <td>123</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>GOOGLE_CLOUD_PROJECT</code></td>
+                                            <td>Google Cloud项目ID</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 初始化标签页
+        const triggerTabList = document.querySelectorAll('#apiTabs button');
+        triggerTabList.forEach(triggerEl => {
+            new bootstrap.Tab(triggerEl);
+        });
+    </script>
+</body>
+</html>
