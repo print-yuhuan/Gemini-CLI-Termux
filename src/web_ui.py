@@ -15,18 +15,74 @@ from pathlib import Path
 
 from .config import GEMINI_AUTH_PASSWORD, CREDENTIAL_FILE
 
-# Global statistics tracking
+# Statistics file path
+STATS_FILE = Path(__file__).parent.parent / "api_stats.json"
+MAX_HISTORY_ENTRIES = 1000
+
+def load_persistent_stats():
+    """Load statistics from persistent storage."""
+    default_stats = {
+        "total_requests": 0,
+        "successful_requests": 0,
+        "failed_requests": 0,
+        "last_request_time": None,
+        "start_time": time.time(),
+        "history": []
+    }
+
+    try:
+        if STATS_FILE.exists():
+            with open(STATS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Update start_time to current session
+                data["start_time"] = time.time()
+                return data
+        else:
+            logging.info("No existing stats file found, starting with fresh statistics")
+            return default_stats
+    except Exception as e:
+        logging.error(f"Error loading stats file: {e}, starting with fresh statistics")
+        return default_stats
+
+def save_persistent_stats():
+    """Save current statistics to persistent storage."""
+    try:
+        data = {
+            "total_requests": api_stats["total_requests"],
+            "successful_requests": api_stats["successful_requests"],
+            "failed_requests": api_stats["failed_requests"],
+            "last_request_time": api_stats["last_request_time"],
+            "start_time": api_stats["start_time"],
+            "history": api_history
+        }
+
+        # Ensure parent directory exists
+        STATS_FILE.parent.mkdir(exist_ok=True)
+
+        # Write to temporary file first, then rename for atomic operation
+        temp_file = STATS_FILE.with_suffix('.tmp')
+        with open(temp_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        # Atomic rename
+        temp_file.replace(STATS_FILE)
+        logging.debug("Statistics saved successfully")
+
+    except Exception as e:
+        logging.error(f"Error saving stats file: {e}")
+
+# Load persistent data on module import
+stats_data = load_persistent_stats()
 api_stats = {
-    "total_requests": 0,
-    "successful_requests": 0,
-    "failed_requests": 0,
-    "last_request_time": None,
-    "start_time": time.time()
+    "total_requests": stats_data["total_requests"],
+    "successful_requests": stats_data["successful_requests"],
+    "failed_requests": stats_data["failed_requests"],
+    "last_request_time": stats_data["last_request_time"],
+    "start_time": stats_data["start_time"]
 }
 
 # API call history
-api_history: List[Dict] = []
-MAX_HISTORY_ENTRIES = 1000
+api_history: List[Dict] = stats_data.get("history", [])
 
 router = APIRouter()
 
@@ -73,18 +129,18 @@ except Exception as e:
 def track_api_call(success: bool = True, endpoint: str = "", error_message: str = "", status_code: int = None):
     """Track API call statistics and history."""
     global api_stats, api_history
-    
+
     current_time = time.time()
-    
+
     # Update statistics
     api_stats["total_requests"] += 1
     if success:
         api_stats["successful_requests"] += 1
     else:
         api_stats["failed_requests"] += 1
-    
+
     api_stats["last_request_time"] = current_time
-    
+
     # Add to history
     history_entry = {
         "timestamp": datetime.now().isoformat(),
@@ -93,12 +149,15 @@ def track_api_call(success: bool = True, endpoint: str = "", error_message: str 
         "error_message": error_message if not success else "",
         "status_code": status_code
     }
-    
+
     api_history.append(history_entry)
-    
+
     # Keep history within limit
     if len(api_history) > MAX_HISTORY_ENTRIES:
         api_history = api_history[-MAX_HISTORY_ENTRIES:]
+
+    # Save to persistent storage
+    save_persistent_stats()
 
 def get_config_values() -> Dict:
     """Read current configuration values from .env file."""
@@ -292,7 +351,7 @@ async def get_system_info():
 async def clear_statistics():
     """Clear all statistics and history."""
     global api_stats, api_history
-    
+
     # Reset statistics to zero
     api_stats = {
         "total_requests": 0,
@@ -301,10 +360,13 @@ async def clear_statistics():
         "last_request_time": None,
         "start_time": time.time()
     }
-    
+
     # Clear history
     api_history.clear()
-    
+
+    # Save cleared state to persistent storage
+    save_persistent_stats()
+
     logging.info("Statistics and history cleared")
     return {
         "message": "Statistics and history cleared successfully",
