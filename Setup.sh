@@ -446,7 +446,7 @@ maintenance_menu() {
                 fi
                 ;;
             3)
-                echo -e "${BRIGHT_RED}${BOLD}>> 即将卸载 Gemini-CLI-Termux，操作不可逆！${NC}"
+                echo -e "${BRIGHT_RED}${BOLD}>> 即将卸载 Gemini-CLI-Termux，该操作不可逆！${NC}"
                 echo -ne "${YELLOW}${BOLD}确认继续？（y/N）：${NC}"
                 read -n1 confirm; echo
                 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
