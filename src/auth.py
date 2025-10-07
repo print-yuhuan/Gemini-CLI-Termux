@@ -392,13 +392,11 @@ def get_credentials(allow_oauth_flow=True):
         prompt="consent",
         include_granted_scopes='true'
     )
-    print(f"\n{'='*80}")
-    print(f"AUTHENTICATION REQUIRED")
-    print(f"{'='*80}")
-    print(f"Please open this URL in your browser to log in:")
+    print(f"{'='*45}")
+    print(f"请在浏览器中打开以下链接完成登录：")
     print(f"{auth_url}")
-    print(f"{'='*80}\n")
-    logging.info(f"Please open this URL in your browser to log in: {auth_url}")
+    print(f"{'='*45}\n")
+    logging.info(f"请在浏览器中打开以下链接完成登录： {auth_url}")
     
     server = HTTPServer(("", 8080), _OAuthCallbackHandler)
     server.handle_request()
