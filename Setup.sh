@@ -68,13 +68,51 @@ install_package_if_missing() {
 }
 
 get_lan_ipv4() {
+    local ip iface
+
     if command_exists ip; then
-        ip -4 -o addr show scope global 2>/dev/null | awk '!/ lo / {print $4}' | cut -d'/' -f1 | head -n1
-        return
+        # Prefer Wi-Fi/Ethernet style interfaces so VPN (tun) addresses are skipped.
+        while IFS= read -r iface; do
+            case "$iface" in
+                wlan*|eth*|en*)
+                    ip=$(ip -4 -o addr show dev "$iface" scope global 2>/dev/null | awk '{print $4}' | cut -d'/' -f1 | head -n1)
+                    if [ -n "$ip" ]; then
+                        echo "$ip"
+                        return 0
+                    fi
+                    ;;
+            esac
+        done < <(ip -4 -o addr show scope global 2>/dev/null | awk '{print $2}' | uniq)
+
+        ip=$(ip -4 -o addr show scope global 2>/dev/null | awk '!/ (lo|tun|ppp)/ {print $4}' | cut -d'/' -f1 | head -n1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
     fi
+
     if command_exists ifconfig; then
-        ifconfig 2>/dev/null | awk '/inet / && $2 != "127.0.0.1" {print $2; exit}'
-        return
+        for i in $(seq 0 5); do
+            ip=$(ifconfig 2>/dev/null | grep -A 1 "wlan$i" | grep "inet " | awk '{print $2}' | head -n1)
+            if [ -n "$ip" ]; then
+                echo "$ip"
+                return 0
+            fi
+        done
+
+        ip=$(ifconfig 2>/dev/null | awk '
+            /^[a-zA-Z0-9]+:/ {
+                iface=$1
+                sub(":", "", iface)
+            }
+            /inet / && $2 != "127.0.0.1" && iface !~ /^tun/ {
+                print $2
+                exit
+            }')
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
     fi
     return 1
 }
@@ -104,15 +142,15 @@ install_gemini_cli_termux() {
     if [ -f "$mirror_source" ]; then
         mkdir -p "$(dirname "$mirror_target")"
         ln -sf "$mirror_source" "$mirror_target"
-        echo -e "${BRIGHT_GREEN}${BOLD}>> 已设置清华镜像源，提升拉取速度。${NC}"
+        echo -e "${BRIGHT_GREEN}${BOLD}>> 已设置为Termux官方镜像。${NC}"
     else
-        echo -e "${YELLOW}${BOLD}>> 未检测到清华镜像配置，保留当前镜像设置。${NC}"
+        echo -e "${YELLOW}${BOLD}>> 未检测到Termux官方镜像配置，保留当前镜像设置。${NC}"
     fi
     if ! pkg update; then
         echo -e "${BRIGHT_RED}${BOLD}>> 包索引更新失败，请检查网络后重试。${NC}"
         exit 1
     fi
-    if ! pkg upgrade -y; then
+    if ! pkg upgrade -y -o Dpkg::Options::="--force-confnew"; then
         echo -e "${BRIGHT_RED}${BOLD}>> 包升级失败，请确认网络与磁盘空间后重试。${NC}"
         exit 1
     fi
