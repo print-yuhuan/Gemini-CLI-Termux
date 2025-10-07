@@ -1,0 +1,5 @@
+# Python cache
+__pycache__/
+
+# OAuth credentials
+oauth_creds.json
