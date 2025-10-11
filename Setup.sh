@@ -356,7 +356,6 @@ start_reverse_proxy() {
         return
     }
     check_file_exists "run.py"
-    echo -e "${CYAN}${BOLD}► 正在停止旧进程（如存在）...${NC}"
     pkill -f "python run.py"
     echo -e "${GREEN}${BOLD}► 正在启动服务...${NC}\n"
     python run.py
@@ -449,8 +448,14 @@ change_env_port() {
 
 # 通用配置项修改函数
 change_env_keyvalue() {
+    local title="修改 $2"
+    local title_len=$(echo -n "$title" | wc -m)
+    local total_width=35
+    local padding=$((total_width - title_len - 3))
+    local spaces=$(printf '%*s' "$padding" '')
+
     echo -e "${BRIGHT_CYAN}${BOLD}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${NC}"
-    echo -e "${BRIGHT_CYAN}${BOLD}┃   修改 $2"
+    echo -e "${BRIGHT_CYAN}${BOLD}┃   ${title}${spaces}┃${NC}"
     echo -e "${BRIGHT_CYAN}${BOLD}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${NC}"
     cd "$GEMINI_CLI_TERMUX_DIR" || {
         echo -e "${BRIGHT_RED}${BOLD}✗ 未找到项目目录${NC}"

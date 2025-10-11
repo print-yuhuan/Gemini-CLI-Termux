@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import time
+import subprocess
 import logging
 from datetime import datetime
 from fastapi import Request, HTTPException, Depends
@@ -393,10 +394,11 @@ def get_credentials(allow_oauth_flow=True):
         include_granted_scopes='true'
     )
     print(f"{'='*45}")
-    print(f"请在浏览器中打开以下链接完成登录：")
+    print(f"正在自动跳转至 Google 账号授权页面")
     print(f"{auth_url}")
     print(f"{'='*45}\n")
-    logging.info(f"请在浏览器中打开以下链接完成登录： {auth_url}")
+    subprocess.run(['termux-open-url', auth_url])
+    logging.info(f"正在自动跳转至 Google 账号授权页面：{auth_url}")
     
     server = HTTPServer(("", 8080), _OAuthCallbackHandler)
     server.handle_request()
