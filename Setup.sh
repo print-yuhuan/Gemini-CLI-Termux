@@ -402,8 +402,8 @@ lan_config_menu() {
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 开启网络监听${NC}"
         echo -e "${RED}${BOLD}2. 关闭网络监听${NC}"
-        echo -e "${BLUE}${BOLD}3. 获取内网地址${NC}"
-        echo -e "${MAGENTA}${BOLD}4. 内网连接帮助${NC}"
+        echo -e "${CYAN}${BOLD}3. 获取内网地址${NC}"
+        echo -e "${BLUE}${BOLD}4. 内网连接帮助${NC}"
         echo -e "${CYAN}${BOLD}========================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-4）：${NC}"
         read -n1 lan_choice; echo
@@ -482,11 +482,11 @@ reverse_proxy_config_menu() {
         clear
         echo -e "${CYAN}${BOLD}==== 服务配置管理 ====${NC}"
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
-        echo -e "${BLUE}${BOLD}1. 修改监听地址${NC}"
-        echo -e "${GREEN}${BOLD}2. 修改监听端口${NC}"
+        echo -e "${GREEN}${BOLD}1. 修改监听地址${NC}"
+        echo -e "${BLUE}${BOLD}2. 修改监听端口${NC}"
         echo -e "${MAGENTA}${BOLD}3. 修改项目标识${NC}"
-        echo -e "${MAGENTA}${BOLD}4. 修改连接秘钥${NC}"
-        echo -e "${BLUE}${BOLD}5. 局域网配置项${NC}"
+        echo -e "${CYAN}${BOLD}4. 修改连接秘钥${NC}"
+        echo -e "${GREEN}${BOLD}5. 局域网配置项${NC}"
         echo -e "${CYAN}${BOLD}======================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-5）：${NC}"
         read -n1 rev_choice; echo
@@ -512,7 +512,7 @@ cloud_config_menu() {
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 获取项目 ID${NC}"
         echo -e "${BLUE}${BOLD}2. 管理 Gemini for Google Cloud${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 管理 Gemini Cloud Assist API${NC}"
+        echo -e "${CYAN}${BOLD}3. 管理 Gemini Cloud Assist API${NC}"
         echo -e "${CYAN}${BOLD}=============================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
         read -n1 cloud_choice; echo
@@ -552,7 +552,7 @@ maintenance_menu() {
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 更新服务${NC}"
         echo -e "${BLUE}${BOLD}2. 重新部署${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 卸载服务${NC}"
+        echo -e "${RED}${BOLD}3. 卸载服务${NC}"
         echo -e "${CYAN}${BOLD}==================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
         read -n1 main_choice; echo
@@ -633,7 +633,7 @@ about_script_menu() {
         echo -e "${YELLOW}${BOLD}0. 返回上级菜单${NC}"
         echo -e "${GREEN}${BOLD}1. 作者信息${NC}"
         echo -e "${BLUE}${BOLD}2. 加群交流${NC}"
-        echo -e "${MAGENTA}${BOLD}3. 邮件反馈${NC}"
+        echo -e "${CYAN}${BOLD}3. 邮件反馈${NC}"
         echo -e "${CYAN}${BOLD}====================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-3）：${NC}"
         read -n1 about_choice; echo
@@ -694,10 +694,10 @@ main_menu() {
         echo -e "${GREEN}${BOLD}1. 启动服务${NC}"
         echo -e "${BLUE}${BOLD}2. 重新授权${NC}"
         echo -e "${MAGENTA}${BOLD}3. 修改配置${NC}"
-        echo -e "${MAGENTA}${BOLD}4. 谷歌云项${NC}"
-        echo -e "${BLUE}${BOLD}5. 系统管理${NC}"
-        echo -e "${CYAN}${BOLD}6. 关于脚本${NC}"
-        echo -e "${CYAN}${BOLD}====================================${NC}"
+        echo -e "${CYAN}${BOLD}4. 谷歌云项${NC}"
+        echo -e "${YELLOW}${BOLD}5. 系统管理${NC}"
+        echo -e "${GREEN}${BOLD}6. 关于脚本${NC}"
+        echo -e "${CYAN}${BOLD}==================================${NC}"
         echo -ne "${CYAN}${BOLD}请选择操作（0-6）：${NC}"
         read -n1 choice; echo
         case "$choice" in
