@@ -130,7 +130,7 @@ async def root():
             "health": "/health"
         },
         "authentication": "Required for all endpoints except root and health",
-        "repository": "https://github.com/user/geminicli2api"
+        "repository": "https://github.com/print-yuhuan/Gemini-CLI-Termux"
     }
 
 # Health check endpoint for Docker/Hugging Face
