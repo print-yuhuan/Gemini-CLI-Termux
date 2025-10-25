@@ -267,6 +267,13 @@ install_gemini_cli_termux() {
     fi
     if "${pip_cmd[@]}"; then
         echo -e "${GREEN}${BOLD}>> 步骤 8/8 完成：Python 依赖包已安装。${NC}"
+
+        # 保存 requirements.txt 的 MD5 哈希值
+        if command_exists md5sum; then
+            md5sum requirements.txt 2>/dev/null | awk '{print $1}' > .requirements.md5
+        elif command_exists md5; then
+            md5 -q requirements.txt 2>/dev/null > .requirements.md5
+        fi
     else
         echo -e "${RED}${BOLD}>> Python 依赖包安装失败，请检查网络连接和磁盘空间。${NC}"
         exit 1
@@ -434,7 +441,7 @@ lan_config_menu() {
                 if [ -n "$ip" ]; then
                     PORT=$(get_env_value PORT)
                     echo -e "${CYAN}${BOLD}=================================================${NC}"
-                    echo -e "${BOLD}请在局域网内的其他设备浏览器中访问：${NC}"
+                    echo -e "${BOLD}请在支持自定义 API 的客户端中配置以下地址：${NC}"
                     echo -e "${GREEN}${BOLD}http://$ip:${PORT:-8888}/${NC}"
                     echo -e "${CYAN}${BOLD}=================================================${NC}"
                 else
@@ -448,24 +455,42 @@ lan_config_menu() {
                 echo -e "${CYAN}${BOLD}Gemini-CLI-Termux 局域网连接指南${NC}"
                 echo -e "${CYAN}${BOLD}==================================================${NC}\n"
 
-                echo -e "${CYAN}${BOLD}一、准备工作${NC}"
-                echo -e "${BOLD}  1. 确保 Gemini-CLI-Termux 已正确安装。${NC}"
-                echo -e "${BOLD}  2. 本机（运行服务）和访问设备需连接同一局域网（如同一个WiFi或热点）。${NC}\n"
+                echo -e "${CYAN}${BOLD}一、服务说明${NC}"
+                echo -e "${BOLD}  本服务是 Gemini CLI 反向代理接口，提供双接口支持：${NC}"
+                echo -e "${BOLD}  · OpenAI 兼容接口（推荐）：/v1/chat/completions、/v1/models${NC}"
+                echo -e "${BOLD}  · Gemini 原生接口：/v1beta/models、/v1beta/models/*${NC}"
+                echo -e "${BOLD}  需配合支持自定义 API 的客户端使用，不可直接在浏览器中打开。${NC}\n"
 
-                echo -e "${CYAN}${BOLD}二、操作顺序建议${NC}"
-                echo -e "  ${BOLD}1. 开启网络监听（如已开启可跳过）${NC}"
-                echo -e "${BOLD}    - 仅首次设置或曾关闭时需执行。${NC}\n"
-                echo -e "  ${BOLD}2. 获取内网地址（如已知且无变动可跳过）${NC}"
-                echo -e "${BOLD}    - 若设备重启、WiFi重连、网络切换，内网IP可能变动，需重新获取。${NC}\n"
+                echo -e "${CYAN}${BOLD}二、准备工作${NC}"
+                echo -e "${BOLD}  1. 确保已正确配置 Google Cloud 项目 ID 和完成授权。${NC}"
+                echo -e "${BOLD}  2. 本机（运行服务）和访问设备需连接同一局域网（WiFi或热点）。${NC}"
+                echo -e "${BOLD}  3. 准备支持自定义 OpenAI 兼容 API 的客户端。${NC}\n"
+
+                echo -e "${CYAN}${BOLD}三、配置步骤${NC}"
+                echo -e "  ${BOLD}1. 开启网络监听${NC}"
+                echo -e "${BOLD}    - 返回上级菜单，选择选项"1"开启网络监听${NC}"
+                echo -e "${BOLD}    - 将监听地址设置为 0.0.0.0（允许局域网访问）${NC}\n"
+                echo -e "  ${BOLD}2. 获取内网地址${NC}"
+                echo -e "${BOLD}    - 返回上级菜单，选择选项"3"获取内网地址${NC}"
+                echo -e "${BOLD}    - 记录显示的局域网 IP 和端口（如：http://192.168.1.100:8888）${NC}\n"
                 echo -e "  ${BOLD}3. 启动服务${NC}"
-                echo -e "${BOLD}    - 返回主菜单，选择"启动服务"，务必保持终端窗口运行。${NC}\n"
-                echo -e "  ${BOLD}4. 其他设备访问${NC}"
-                echo -e "${BOLD}    - 在同网络下的设备浏览器输入获取的网址访问服务。${NC}\n"
+                echo -e "${BOLD}    - 返回主菜单，选择"1. 启动服务"${NC}"
+                echo -e "${BOLD}    - 保持 Termux 窗口运行（不要关闭或切换到后台）${NC}\n"
+                echo -e "  ${BOLD}4. 客户端配置示例${NC}"
+                echo -e "${BOLD}    API 端点：http://192.168.1.100:8888/v1${NC}"
+                echo -e "${BOLD}    API 密钥：123（默认密码，建议通过"主菜单→3→4"修改）${NC}"
+                echo -e "${BOLD}    模型选择：gemini-2.5-flash / gemini-2.5-pro${NC}\n"
 
-                echo -e "${CYAN}${BOLD}三、常见问题与提示${NC}"
-                echo -e "${BOLD}  · ${NC}${BOLD}获取不到内网IP：${NC}${BOLD} 请确认本机WiFi/热点已连接，可尝试断开重连。${NC}"
-                echo -e "${BOLD}  · ${NC}${BOLD}外部设备无法访问：${NC}${BOLD} 请确保网络监听已开启，且两台设备在同一局域网/热点。${NC}"
-                echo -e "${BOLD}  · ${NC}${BOLD}设备重启或网络切换：${NC}${BOLD} 需重新获取内网IP并用新地址访问。${NC}\n"
+                echo -e "${CYAN}${BOLD}四、使用提示${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}认证方式：${NC}${BOLD}支持 Bearer Token、API Key、HTTP Basic Auth 等${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}流式响应：${NC}${BOLD}客户端启用 Stream 可获得实时输出效果${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}模型变体：${NC}${BOLD}支持 -search（搜索）、-nothinking/maxthinking 等${NC}\n"
+
+                echo -e "${CYAN}${BOLD}五、常见问题${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}获取不到内网IP：${NC}${BOLD}确认WiFi已连接，尝试断开重连或切换网络${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}客户端401错误：${NC}${BOLD}检查API密钥是否正确（默认：123）${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}客户端无法连接：${NC}${BOLD}确认网络监听已开启且设备在同一局域网${NC}"
+                echo -e "${BOLD}  · ${NC}${BOLD}IP地址变动：${NC}${BOLD}设备重启或网络切换后需重新获取IP并更新客户端${NC}\n"
 
                 echo -e "${CYAN}${BOLD}==================================================${NC}"
                 press_any_key
@@ -559,30 +584,72 @@ maintenance_menu() {
         case "$main_choice" in
             0) break ;;
             1)
-                echo -e "${GREEN}${BOLD}>> 正在更新项目...${NC}"
+                echo -e "${GREEN}${BOLD}>> 正在检查更新...${NC}"
                 cd "$GEMINI_CLI_TERMUX_DIR" || {
                     echo -e "${RED}${BOLD}>> 项目目录不存在。${NC}"
                     press_any_key
                     continue
                 }
 
+                echo -e "${CYAN}${BOLD}>> 获取远程仓库信息...${NC}"
+                if ! git fetch origin; then
+                    echo -e "${RED}${BOLD}>> 无法连接到远程仓库，请检查网络连接。${NC}"
+                    press_any_key
+                    continue
+                fi
+
+                local_commit=$(git rev-parse HEAD)
+                remote_commit=$(git rev-parse origin/main)
+
+                if [ "$local_commit" = "$remote_commit" ]; then
+                    echo -e "${GREEN}${BOLD}>> 当前已是最新版本，无需更新。${NC}"
+                    press_any_key
+                    continue
+                fi
+
+                echo -e "${YELLOW}${BOLD}>> 检测到远程仓库有更新，开始更新流程...${NC}"
+
                 echo -e "${CYAN}${BOLD}>> 备份配置文件...${NC}"
                 if [ -f .env ]; then cp .env .env.bak; fi
                 if [ -f oauth_creds.json ]; then cp oauth_creds.json oauth_creds.json.bak; fi
 
                 echo -e "${CYAN}${BOLD}>> 拉取最新代码...${NC}"
-                git fetch origin
                 git reset --hard origin/main
 
                 echo -e "${CYAN}${BOLD}>> 恢复配置文件...${NC}"
                 if [ -f .env.bak ]; then mv -f .env.bak .env; fi
                 if [ -f oauth_creds.json.bak ]; then mv -f oauth_creds.json.bak oauth_creds.json; fi
 
-                echo -e "${CYAN}${BOLD}>> 更新 Python 依赖...${NC}"
-                python -m pip install -r requirements.txt \
-                    && echo -e "${GREEN}${BOLD}>> 更新完成。${NC}" \
-                    || echo -e "${RED}${BOLD}>> 更新失败，请检查网络连接。${NC}"
+                echo -e "${CYAN}${BOLD}>> 检查 Python 依赖变更...${NC}"
+                local req_hash_file="$GEMINI_CLI_TERMUX_DIR/.requirements.md5"
+                local current_hash=""
+                local stored_hash=""
 
+                if command_exists md5sum; then
+                    current_hash=$(md5sum requirements.txt 2>/dev/null | awk '{print $1}')
+                elif command_exists md5; then
+                    current_hash=$(md5 -q requirements.txt 2>/dev/null)
+                fi
+
+                if [ -f "$req_hash_file" ]; then
+                    stored_hash=$(cat "$req_hash_file" 2>/dev/null)
+                fi
+
+                if [ -n "$current_hash" ] && [ "$current_hash" = "$stored_hash" ]; then
+                    echo -e "${GREEN}${BOLD}>> Python 依赖未发生变更，跳过更新。${NC}"
+                else
+                    echo -e "${CYAN}${BOLD}>> 检测到依赖文件变更，正在更新 Python 依赖...${NC}"
+                    if python -m pip install -r requirements.txt; then
+                        echo -e "${GREEN}${BOLD}>> Python 依赖更新成功。${NC}"
+                        if [ -n "$current_hash" ]; then
+                            echo "$current_hash" > "$req_hash_file"
+                        fi
+                    else
+                        echo -e "${RED}${BOLD}>> Python 依赖更新失败，请检查网络连接。${NC}"
+                    fi
+                fi
+
+                echo -e "${GREEN}${BOLD}>> 更新完成。${NC}"
                 press_any_key
                 ;;
             2)
