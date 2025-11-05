@@ -302,7 +302,7 @@ start_reverse_proxy() {
         return
     }
     check_file_exists "run.py"
-    pkill -f "python run.py"
+    pkill -f "python.*run.py"
     echo -e "${GREEN}${BOLD}>> 正在启动服务...${NC}\n"
     python run.py
     echo -e "\n${CYAN}${BOLD}================================${NC}"
