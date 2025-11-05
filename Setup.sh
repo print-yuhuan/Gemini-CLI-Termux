@@ -674,6 +674,12 @@ maintenance_menu() {
                 read -n1 confirm; echo
                 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                     [ -d "$GEMINI_CLI_TERMUX_DIR" ] && rm -rf "$GEMINI_CLI_TERMUX_DIR"
+					sed -i '/# Gemini-CLI-Termux 菜单自启动/d' "$HOME/.bashrc" 2>/dev/null
+					sed -i '/bash[ ]\+\$HOME\/Gemini-CLI-Termux\/Setup\.sh/d' "$HOME/.bashrc" 2>/dev/null
+					sed -i '/# Gemini-CLI-Termux 菜单自启动/d' "$HOME/.bash_profile" 2>/dev/null
+					sed -i '/bash[ ]\+\$HOME\/Gemini-CLI-Termux\/Setup\.sh/d' "$HOME/.bash_profile" 2>/dev/null
+					sed -i '/# Gemini-CLI-Termux 菜单自启动/d' "$HOME/.profile" 2>/dev/null
+					sed -i '/bash[ ]\+\$HOME\/Gemini-CLI-Termux\/Setup\.sh/d' "$HOME/.profile" 2>/dev/null
                     echo -e "${GREEN}${BOLD}>> 已卸载 Gemini-CLI-Termux。${NC}"
                     echo -e "${CYAN}${BOLD}>> 感谢使用，再见！${NC}"
                     press_any_key
