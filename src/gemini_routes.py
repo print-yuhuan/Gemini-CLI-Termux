@@ -183,4 +183,4 @@ async def health_check():
     """
     Simple health check endpoint.
     """
-    return {"status": "healthy", "service": "geminicli2api"}
+    return {"status": "healthy", "service": "Gemini-CLI-Termux"}

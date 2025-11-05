@@ -113,7 +113,7 @@ async def root():
     No authentication required.
     """
     return {
-        "name": "geminicli2api",
+        "name": "Gemini-CLI-Termux",
         "description": "OpenAI-compatible API proxy for Google's Gemini models via gemini-cli",
         "purpose": "Provides both OpenAI-compatible endpoints (/v1/chat/completions) and native Gemini API endpoints for accessing Google's Gemini models",
         "version": "1.0.0",
@@ -137,7 +137,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for container orchestration."""
-    return {"status": "healthy", "service": "geminicli2api"}
+    return {"status": "healthy", "service": "Gemini-CLI-Termux"}
 
 app.include_router(openai_router)
 app.include_router(gemini_router)

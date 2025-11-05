@@ -1,5 +1,5 @@
 """
-Configuration constants for the Geminicli2api proxy server.
+Configuration constants for the Gemini-CLI-Termux proxy server.
 Centralizes all configuration to avoid duplication across modules.
 """
 import os
