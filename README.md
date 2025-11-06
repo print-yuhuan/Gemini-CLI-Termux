@@ -33,10 +33,14 @@
 
 ## 🎯 核心功能亮点
 
-### 🤖 Gemini 2.5 系列模型支持
+### 🤖 Gemini 模型全系列支持
+- **Gemini 3 Pro**: 🌟 最新一代高级多模态模型，支持超长上下文（1M tokens）
 - **Gemini 2.5 Pro**: 高级多模态模型，支持超长上下文（1M tokens）
 - **Gemini 2.5 Flash**: 快速高效的多模态模型
-- **多版本支持**: 包括 Preview 版本（05-06、06-05、05-20、04-17）
+- **多版本支持**:
+  - Gemini 3 Pro Preview (11-2025)
+  - Gemini 2.5 Pro Preview (03-25、05-06、06-05)
+  - Gemini 2.5 Flash Preview (04-17、05-20)
 - **模型变体**: 支持 search（搜索增强）、nothinking/maxthinking（思考模式）等变体
 - **灵活配置**: 可调节温度、top_p、top_k 等生成参数
 
@@ -295,8 +299,15 @@ curl -H "x-goog-api-key: 123" http://127.0.0.1:8888/v1/models
 <details>
 <summary><b>查看完整模型列表</b>（点击展开）</summary>
 
+**Gemini 3 Pro 系列** 🌟：
+- `gemini-3-pro-preview-11-2025` - 最新一代高级多模态模型
+- `gemini-3-pro-preview-11-2025-search` - 搜索增强版
+- `gemini-3-pro-preview-11-2025-nothinking` - 无思考模式
+- `gemini-3-pro-preview-11-2025-maxthinking` - 最大思考模式
+
 **Gemini 2.5 Pro 系列**：
 - `gemini-2.5-pro` - 高级多模态模型
+- `gemini-2.5-pro-preview-03-25` - 预览版本
 - `gemini-2.5-pro-preview-05-06` - 预览版本
 - `gemini-2.5-pro-preview-06-05` - 预览版本
 - `gemini-2.5-pro-search` - 搜索增强版
@@ -305,12 +316,17 @@ curl -H "x-goog-api-key: 123" http://127.0.0.1:8888/v1/models
 
 **Gemini 2.5 Flash 系列**：
 - `gemini-2.5-flash` - 快速多模态模型
-- `gemini-2.5-flash-preview-05-20` - 预览版本
 - `gemini-2.5-flash-preview-04-17` - 预览版本
+- `gemini-2.5-flash-preview-05-20` - 预览版本
 - `gemini-2.5-flash-image-preview` - 图像预览版
 - `gemini-2.5-flash-search` - 搜索增强版
 - `gemini-2.5-flash-nothinking` - 无思考模式
 - `gemini-2.5-flash-maxthinking` - 最大思考模式
+
+**思考模式说明**：
+- **nothinking**: 思考预算最小化（2.5 Flash: 0 tokens, 2.5 Pro/3 Pro: 128 tokens）
+- **maxthinking**: 思考预算最大化（2.5 Flash: 24576 tokens, 2.5 Pro/3 Pro: 32768 tokens）
+- **默认模式**: 自动平衡的思考预算
 
 </details>
 
@@ -806,6 +822,17 @@ for chunk in stream:
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="", flush=True)
 print()  # 换行
+
+# 4️⃣ 使用 Gemini 3 Pro（最新模型）
+response = client.chat.completions.create(
+    model="gemini-3-pro-preview-11-2025",  # 最新一代模型
+    messages=[
+        {"role": "user", "content": "解释什么是人工智能"}
+    ],
+    temperature=0.7,
+    max_tokens=200
+)
+print(response.choices[0].message.content)
 ```
 
 </details>
@@ -863,6 +890,25 @@ response = client.chat.completions.create(
     temperature=0.3  # 较低温度获得更准确的回答
 )
 print(response.choices[0].message.content)
+
+# 使用 Gemini 3 Pro 搜索增强模式
+response = client.chat.completions.create(
+    model="gemini-3-pro-preview-11-2025-search",  # Gemini 3 搜索增强版
+    messages=[
+        {"role": "user", "content": "2025年最新的AI技术趋势是什么？"}
+    ]
+)
+print(response.choices[0].message.content)
+
+# 使用 Gemini 3 Pro 最大思考模式
+response = client.chat.completions.create(
+    model="gemini-3-pro-preview-11-2025-maxthinking",  # Gemini 3 最大思考
+    messages=[
+        {"role": "user", "content": "设计一个高效的分布式缓存系统架构"}
+    ],
+    temperature=0.5
+)
+print(response.choices[0].message.content)
 ```
 
 </details>
@@ -905,6 +951,29 @@ curl -X POST http://127.0.0.1:8888/v1/chat/completions \
       {"role": "user", "content": "写一个简短的故事"}
     ],
     "stream": true
+  }'
+
+# 6️⃣ 使用 Gemini 3 Pro（最新模型）
+curl -X POST http://127.0.0.1:8888/v1/chat/completions \
+  -H "Authorization: Bearer 123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-preview-11-2025",
+    "messages": [
+      {"role": "user", "content": "介绍一下 Gemini 3.0 的新特性"}
+    ],
+    "temperature": 0.7
+  }'
+
+# 7️⃣ 使用 Gemini 3 Pro 搜索增强模式
+curl -X POST http://127.0.0.1:8888/v1/chat/completions \
+  -H "Authorization: Bearer 123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-preview-11-2025-search",
+    "messages": [
+      {"role": "user", "content": "2025年最新的人工智能发展动态"}
+    ]
   }'
 ```
 
@@ -1033,6 +1102,6 @@ except Exception as e:
 
 **⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！⭐**
 
-*最后更新：2025年10月13日*
+*最后更新：2025年11月7日*
 
 </div>
