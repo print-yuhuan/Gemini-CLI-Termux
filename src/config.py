@@ -52,10 +52,23 @@ DEFAULT_SAFETY_SETTINGS = [
 # Base Models (without search variants)
 BASE_MODELS = [
     {
+        "name": "models/gemini-2.5-pro-preview-03-25",
+        "version": "001",
+        "displayName": "Gemini 2.5 Pro Preview 03-25",
+        "description": "Gemini 2.5 Pro Preview 03-25",
+        "inputTokenLimit": 1048576,
+        "outputTokenLimit": 65535,
+        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
+        "temperature": 1.0,
+        "maxTemperature": 2.0,
+        "topP": 0.95,
+        "topK": 64
+    },
+    {
         "name": "models/gemini-2.5-pro-preview-05-06",
         "version": "001",
         "displayName": "Gemini 2.5 Pro Preview 05-06",
-        "description": "Preview version of Gemini 2.5 Pro from May 6th",
+        "description": "Gemini 2.5 Pro Preview 05-06",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -68,7 +81,7 @@ BASE_MODELS = [
         "name": "models/gemini-2.5-pro-preview-06-05",
         "version": "001",
         "displayName": "Gemini 2.5 Pro Preview 06-05",
-        "description": "Preview version of Gemini 2.5 Pro from June 5th",
+        "description": "Gemini 2.5 Pro Preview 06-05",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -81,7 +94,7 @@ BASE_MODELS = [
         "name": "models/gemini-2.5-pro",
         "version": "001",
         "displayName": "Gemini 2.5 Pro",
-        "description": "Advanced multimodal model with enhanced capabilities",
+        "description": "Gemini 2.5 Pro",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -91,10 +104,10 @@ BASE_MODELS = [
         "topK": 64
     },
     {
-        "name": "models/gemini-2.5-flash-preview-05-20",
+        "name": "models/gemini-3-pro-preview-11-2025",
         "version": "001",
-        "displayName": "Gemini 2.5 Flash Preview 05-20",
-        "description": "Preview version of Gemini 2.5 Flash from May 20th",
+        "displayName": "Gemini 3 Pro Preview 11-2025",
+        "description": "Gemini 3 Pro Preview 11-2025",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -107,7 +120,20 @@ BASE_MODELS = [
         "name": "models/gemini-2.5-flash-preview-04-17",
         "version": "001",
         "displayName": "Gemini 2.5 Flash Preview 04-17",
-        "description": "Preview version of Gemini 2.5 Flash from April 17th",
+        "description": "Gemini 2.5 Flash Preview 04-17",
+        "inputTokenLimit": 1048576,
+        "outputTokenLimit": 65535,
+        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
+        "temperature": 1.0,
+        "maxTemperature": 2.0,
+        "topP": 0.95,
+        "topK": 64
+    },
+    {
+        "name": "models/gemini-2.5-flash-preview-05-20",
+        "version": "001",
+        "displayName": "Gemini 2.5 Flash Preview 05-20",
+        "description": "Gemini 2.5 Flash Preview 05-20",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -120,7 +146,7 @@ BASE_MODELS = [
         "name": "models/gemini-2.5-flash",
         "version": "001",
         "displayName": "Gemini 2.5 Flash",
-        "description": "Fast and efficient multimodal model with latest improvements",
+        "description": "Gemini 2.5 Flash",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -166,9 +192,9 @@ def _generate_thinking_variants():
     base_model_with_variance = [model for model in BASE_MODELS if "gemini-2.5-flash-image" not in model["name"]]
     for model in base_model_with_variance:
         # Only add thinking variants for models that support content generation
-        # and contain "gemini-2.5-flash" or "gemini-2.5-pro" in their name
+        # and contain "gemini-2.5-flash", "gemini-2.5-pro" or "gemini-3-pro" in their name
         if ("generateContent" in model["supportedGenerationMethods"] and
-            ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"])):
+            ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"] or "gemini-3-pro" in model["name"])):
             
             # Add -nothinking variant
             nothinking_variant = model.copy()
@@ -191,9 +217,9 @@ def _generate_combined_variants():
     combined_models = []
     for model in BASE_MODELS:
         # Only add combined variants for models that support content generation
-        # and contain "gemini-2.5-flash" or "gemini-2.5-pro" in their name
+        # and contain "gemini-2.5-flash", "gemini-2.5-pro" or "gemini-3-pro" in their name
         if ("generateContent" in model["supportedGenerationMethods"] and
-            ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"])):
+            ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"] or "gemini-3-pro" in model["name"])):
             
             # search + nothinking
             search_nothinking = model.copy()
@@ -248,12 +274,12 @@ def get_thinking_budget(model_name):
     if is_nothinking_model(model_name):
         if "gemini-2.5-flash" in base_model:
             return 0  # No thinking for flash
-        elif "gemini-2.5-pro" in base_model:
+        elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
             return 128  # Limited thinking for pro
     elif is_maxthinking_model(model_name):
         if "gemini-2.5-flash" in base_model:
             return 24576
-        elif "gemini-2.5-pro" in base_model:
+        elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
             return 32768
     else:
         # Default thinking budget for regular models
@@ -265,7 +291,7 @@ def should_include_thoughts(model_name):
     if is_nothinking_model(model_name):
         # For nothinking mode, still include thoughts if it's a pro model
         base_model = get_base_model_name(model_name)
-        return "gemini-2.5-pro" in base_model
+        return "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model
     else:
         # For all other modes, include thoughts
         return True
