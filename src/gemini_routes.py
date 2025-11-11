@@ -1,7 +1,8 @@
 """
-Gemini API Routes - Handles native Gemini API endpoints.
-This module provides native Gemini API endpoints that proxy directly to Google's API
-without any format transformations.
+Gemini API 路由模块 - 处理原生 Gemini API 端点
+
+本模块提供原生 Gemini API 端点，直接代理至 Google API，
+无需进行任何格式转换。
 """
 import json
 import logging
@@ -17,8 +18,9 @@ router = APIRouter()
 @router.get("/v1beta/models")
 async def gemini_list_models(request: Request, username: str = Depends(authenticate_user)):
     """
-    Native Gemini models endpoint.
-    Returns available models in Gemini format, matching the official Gemini API.
+    原生 Gemini 模型列表端点
+
+    返回 Gemini 格式的可用模型列表，与官方 Gemini API 保持一致。
     """
     
     try:
@@ -51,25 +53,26 @@ async def gemini_list_models(request: Request, username: str = Depends(authentic
 @router.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def gemini_proxy(request: Request, full_path: str, username: str = Depends(authenticate_user)):
     """
-    Native Gemini API proxy endpoint.
-    Handles all native Gemini API calls by proxying them directly to Google's API.
-    
-    This endpoint handles paths like:
+    原生 Gemini API 通用代理端点
+
+    直接代理所有原生 Gemini API 请求至 Google API。
+
+    支持的路径格式包括：
     - /v1beta/models/{model}/generateContent
     - /v1beta/models/{model}/streamGenerateContent
     - /v1/models/{model}/generateContent
-    - etc.
+    - 以及其他类似路径
     """
     
     try:
-        # Get the request body
+        # 读取请求体数据
         post_data = await request.body()
-        
-        # Determine if this is a streaming request
+
+        # 根据路径判断是否为流式请求
         is_streaming = "stream" in full_path.lower()
-        
-        # Extract model name from the path
-        # Paths typically look like: v1beta/models/gemini-1.5-pro/generateContent
+
+        # 从路径中提取模型名称
+        # 路径格式示例：v1beta/models/gemini-1.5-pro/generateContent
         model_name = _extract_model_from_path(full_path)
         
         logging.info(f"Gemini proxy request: path={full_path}, model={model_name}, stream={is_streaming}")
@@ -87,7 +90,7 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
                 media_type="application/json"
             )
         
-        # Parse the incoming request
+        # 解析请求体为 JSON 对象
         try:
             if post_data:
                 incoming_request = json.loads(post_data)
@@ -106,13 +109,13 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
                 media_type="application/json"
             )
         
-        # Build the payload for Google API
+        # 构建符合 Google API 规范的请求负载
         gemini_payload = build_gemini_payload_from_native(incoming_request, model_name)
-        
-        # Send the request to Google API
+
+        # 向 Google API 发送请求并获取响应
         response = send_gemini_request(gemini_payload, is_streaming=is_streaming)
-        
-        # Log the response status
+
+        # 记录响应状态信息
         if hasattr(response, 'status_code'):
             if response.status_code != 200:
                 logging.error(f"Gemini API returned error: status={response.status_code}")
@@ -137,50 +140,52 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
 
 def _extract_model_from_path(path: str) -> str:
     """
-    Extract the model name from a Gemini API path.
-    
-    Examples:
+    从 Gemini API 路径中提取模型名称
+
+    路径格式示例：
     - "v1beta/models/gemini-1.5-pro/generateContent" -> "gemini-1.5-pro"
     - "v1/models/gemini-2.0-flash/streamGenerateContent" -> "gemini-2.0-flash"
-    
-    Args:
-        path: The API path
-        
-    Returns:
-        Model name (just the model name, not prefixed with "models/") or None if not found
+
+    参数：
+        path: API 路径字符串
+
+    返回：
+        提取的模型名称（不含 "models/" 前缀），若未找到则返回 None
     """
     parts = path.split('/')
-    
-    # Look for the pattern: .../models/{model_name}/...
+
+    # 查找路径模式：.../models/{model_name}/...
     try:
         models_index = parts.index('models')
         if models_index + 1 < len(parts):
             model_name = parts[models_index + 1]
-            # Remove any action suffix like ":streamGenerateContent" or ":generateContent"
+            # 移除操作后缀（如 ":streamGenerateContent" 或 ":generateContent"）
             if ':' in model_name:
                 model_name = model_name.split(':')[0]
-            # Return just the model name without "models/" prefix
+            # 返回纯模型名称（不含 "models/" 前缀）
             return model_name
     except ValueError:
         pass
-    
-    # If we can't find the pattern, return None
+
+    # 未匹配到预期模式，返回 None
     return None
 
 
 @router.get("/v1/models")
 async def gemini_list_models_v1(request: Request, username: str = Depends(authenticate_user)):
     """
-    Alternative models endpoint for v1 API version.
-    Some clients might use /v1/models instead of /v1beta/models.
+    模型列表端点（v1 版本）
+
+    为使用 /v1/models 路径的客户端提供备用端点，
+    部分客户端可能使用此路径而非 /v1beta/models。
     """
     return await gemini_list_models(request, username)
 
 
-# Health check endpoint
+# 健康检查端点
 @router.get("/health")
 async def health_check():
     """
-    Simple health check endpoint.
+    服务健康检查端点
     """
     return {"status": "healthy", "service": "Gemini-CLI-Termux"}

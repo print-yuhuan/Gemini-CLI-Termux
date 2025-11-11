@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union, Dict, Any
 
-# OpenAI Models
+# OpenAI 模型
 class OpenAIChatMessage(BaseModel):
     role: str
     content: Union[str, List[Dict[str, Any]]]
@@ -23,7 +23,7 @@ class OpenAIChatCompletionRequest(BaseModel):
     reasoning_effort: Optional[str] = None
 
     class Config:
-        extra = "allow"  # Allow additional fields not explicitly defined
+        extra = "allow"  # 允许未明确定义的附加字段
 
 class OpenAIChatCompletionChoice(BaseModel):
     index: int
@@ -53,7 +53,7 @@ class OpenAIChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[OpenAIChatCompletionStreamChoice]
 
-# Gemini Models
+# Gemini 模型
 class GeminiPart(BaseModel):
     text: str
 

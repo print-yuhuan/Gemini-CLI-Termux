@@ -1,7 +1,8 @@
 """
-OpenAI API Routes - Handles OpenAI-compatible endpoints.
-This module provides OpenAI-compatible endpoints that transform requests/responses
-and delegate to the Google API client.
+OpenAI API 路由模块 - 处理 OpenAI 兼容端点
+
+本模块提供 OpenAI 兼容接口，负责请求/响应格式转换，
+并委托给 Google API 客户端进行实际处理。
 """
 import json
 import uuid
@@ -29,18 +30,19 @@ async def openai_chat_completions(
     username: str = Depends(authenticate_user)
 ):
     """
-    OpenAI-compatible chat completions endpoint.
-    Transforms OpenAI requests to Gemini format, sends to Google API,
-    and transforms responses back to OpenAI format.
+    OpenAI 兼容的聊天完成端点
+
+    将 OpenAI 格式请求转换为 Gemini 格式，发送至 Google API，
+    再将响应转换回 OpenAI 格式返回。
     """
     
     try:
         logging.info(f"OpenAI chat completion request: model={request.model}, stream={request.stream}")
-        
-        # Transform OpenAI request to Gemini format
+
+        # 转换 OpenAI 请求为 Gemini 格式
         gemini_request_data = openai_request_to_gemini(request)
-        
-        # Build the payload for Google API
+
+        # 构建符合 Google API 规范的请求负载
         gemini_payload = build_gemini_payload_from_openai(gemini_request_data)
         
     except Exception as e:
@@ -58,7 +60,7 @@ async def openai_chat_completions(
         )
     
     if request.stream:
-        # Handle streaming response
+        # 流式响应处理
         async def openai_stream_generator():
             try:
                 response = send_gemini_request(gemini_payload, is_streaming=True)
@@ -73,14 +75,14 @@ async def openai_chat_completions(
                         
                         if chunk.startswith('data: '):
                             try:
-                                # Parse the Gemini streaming chunk
-                                chunk_data = chunk[6:]  # Remove 'data: ' prefix
+                                # 解析 Gemini 流式数据块
+                                chunk_data = chunk[6:]  # 移除 'data: ' 前缀
                                 gemini_chunk = json.loads(chunk_data)
-                                
-                                # Check if this is an error chunk
+
+                                # 检查是否为错误数据块
                                 if "error" in gemini_chunk:
                                     logging.error(f"Error in streaming response: {gemini_chunk['error']}")
-                                    # Transform error to OpenAI format
+                                    # 转换错误信息为 OpenAI 格式
                                     error_data = {
                                         "error": {
                                             "message": gemini_chunk["error"].get("message", "Unknown error"),
@@ -92,14 +94,14 @@ async def openai_chat_completions(
                                     yield "data: [DONE]\n\n"
                                     return
                                 
-                                # Transform to OpenAI format
+                                # 转换为 OpenAI 流式格式
                                 openai_chunk = gemini_stream_chunk_to_openai(
                                     gemini_chunk,
                                     request.model,
                                     response_id
                                 )
-                                
-                                # Send as OpenAI streaming format
+
+                                # 以 SSE 格式发送数据块
                                 yield f"data: {json.dumps(openai_chunk)}\n\n"
                                 await asyncio.sleep(0)
                                 
@@ -107,11 +109,11 @@ async def openai_chat_completions(
                                 logging.warning(f"Failed to parse streaming chunk: {str(e)}")
                                 continue
                     
-                    # Send the final [DONE] marker
+                    # 发送流式响应结束标记
                     yield "data: [DONE]\n\n"
                     logging.info(f"Completed streaming response: {response_id}")
                 else:
-                    # Error case - handle Response object with error
+                    # 错误处理 - 处理异常 Response 对象
                     error_msg = "Streaming request failed"
                     status_code = 500
                     
@@ -121,7 +123,7 @@ async def openai_chat_completions(
                     
                     if hasattr(response, 'body'):
                         try:
-                            # Try to parse error response
+                            # 解析错误响应内容
                             error_body = response.body
                             if isinstance(error_body, bytes):
                                 error_body = error_body.decode('utf-8', "ignore")
@@ -159,23 +161,23 @@ async def openai_chat_completions(
         )
     
     else:
-        # Handle non-streaming response
+        # 非流式响应处理
         try:
             response = send_gemini_request(gemini_payload, is_streaming=False)
             
             if isinstance(response, Response) and response.status_code != 200:
-                # Handle error responses from Google API
+                # 处理 Google API 返回的错误响应
                 logging.error(f"Gemini API error: status={response.status_code}")
-                
+
                 try:
-                    # Try to parse the error response and transform to OpenAI format
+                    # 解析并转换错误响应为 OpenAI 格式
                     error_body = response.body
                     if isinstance(error_body, bytes):
                         error_body = error_body.decode('utf-8', "ignore")
                     
                     error_data = json.loads(error_body)
                     if "error" in error_data:
-                        # Transform Google API error to OpenAI format
+                        # 转换 Google API 错误为 OpenAI 格式
                         openai_error = {
                             "error": {
                                 "message": error_data["error"].get("message", f"API error: {response.status_code}"),
@@ -190,8 +192,8 @@ async def openai_chat_completions(
                         )
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     pass
-                
-                # Fallback error response
+
+                # 返回备用错误响应
                 return Response(
                     content=json.dumps({
                         "error": {
@@ -205,7 +207,7 @@ async def openai_chat_completions(
                 )
             
             try:
-                # Parse Gemini response and transform to OpenAI format
+                # 解析 Gemini 响应并转换为 OpenAI 格式
                 gemini_response = json.loads(response.body)
                 openai_response = gemini_response_to_openai(gemini_response, request.model)
                 
@@ -243,19 +245,20 @@ async def openai_chat_completions(
 @router.get("/v1/models")
 async def openai_list_models(username: str = Depends(authenticate_user)):
     """
-    OpenAI-compatible models endpoint.
-    Returns available models in OpenAI format.
+    OpenAI 兼容的模型列表端点
+
+    返回 OpenAI 格式的可用模型列表。
     """
     
     try:
         logging.info("OpenAI models list requested")
-        
-        # Convert our Gemini models to OpenAI format
+
+        # 转换 Gemini 模型列表为 OpenAI 格式
         from .config import SUPPORTED_MODELS
-        
+
         openai_models = []
         for model in SUPPORTED_MODELS:
-            # Remove "models/" prefix for OpenAI compatibility
+            # 移除 "models/" 前缀以兼容 OpenAI 格式
             model_id = model["name"].replace("models/", "")
             openai_models.append({
                 "id": model_id,

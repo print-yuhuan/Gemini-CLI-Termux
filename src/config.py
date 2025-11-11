@@ -1,25 +1,26 @@
 """
-Configuration constants for the Gemini-CLI-Termux proxy server.
-Centralizes all configuration to avoid duplication across modules.
+Gemini-CLI-Termux 代理服务器配置模块
+
+集中管理所有配置常量，避免模块间重复定义。
 """
 import os
 
-# Load environment variables from .env file
+# 加载 .env 文件中的环境变量
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed
+    pass  # python-dotenv 未安装
 except Exception:
-    pass  # Could not load .env file
+    pass  # .env 文件加载失败
 
-# API Endpoints
+# API 端点
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 
-# Client Configuration
-CLI_VERSION = "0.1.5"  # Match current gemini-cli version
+# 客户端配置
+CLI_VERSION = "0.13.0"  # 与当前 gemini-cli 版本保持一致
 
-# OAuth Configuration
+# OAuth 配置
 CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
 CLIENT_SECRET = "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"
 SCOPES = [
@@ -28,14 +29,14 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile",
 ]
 
-# File Paths
+# 文件路径
 SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CREDENTIAL_FILE = os.path.join(SCRIPT_DIR, os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "oauth_creds.json"))
 
-# Authentication
+# 身份验证
 GEMINI_AUTH_PASSWORD = os.getenv("GEMINI_AUTH_PASSWORD", "123")
 
-# Default Safety Settings for Google API
+# Google API 默认安全配置
 DEFAULT_SAFETY_SETTINGS = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -49,7 +50,7 @@ DEFAULT_SAFETY_SETTINGS = [
     {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"}
 ]
 
-# Base Models (without search variants)
+# 基础模型列表（不含搜索和思考变体）
 BASE_MODELS = [
     {
         "name": "models/gemini-2.5-pro-preview-03-25",
@@ -170,13 +171,13 @@ BASE_MODELS = [
     }
 ]
 
-# Generate search variants for applicable models
+# 生成搜索增强模型变体
 def _generate_search_variants():
-    """Generate search variants for models that support content generation."""
+    """为支持内容生成的模型生成搜索变体"""
     search_models = []
     base_model_with_variance = [model for model in BASE_MODELS if "gemini-2.5-flash-image" not in model["name"]]
     for model in base_model_with_variance:
-        # Only add search variants for models that support content generation
+        # 仅为支持内容生成的模型创建搜索变体
         if "generateContent" in model["supportedGenerationMethods"]:
             search_variant = model.copy()
             search_variant["name"] = model["name"] + "-search"
@@ -185,25 +186,25 @@ def _generate_search_variants():
             search_models.append(search_variant)
     return search_models
 
-# Generate thinking variants for applicable models
+# 生成思考模式变体
 def _generate_thinking_variants():
-    """Generate nothinking and maxthinking variants for models that support thinking."""
+    """为支持思考的模型生成 nothinking 和 maxthinking 变体"""
     thinking_models = []
     base_model_with_variance = [model for model in BASE_MODELS if "gemini-2.5-flash-image" not in model["name"]]
     for model in base_model_with_variance:
-        # Only add thinking variants for models that support content generation
-        # and contain "gemini-2.5-flash", "gemini-2.5-pro" or "gemini-3-pro" in their name
+        # 仅为支持内容生成的模型创建思考变体
+        # 适用模型：gemini-2.5-flash、gemini-2.5-pro、gemini-3-pro
         if ("generateContent" in model["supportedGenerationMethods"] and
             ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"] or "gemini-3-pro" in model["name"])):
             
-            # Add -nothinking variant
+            # 创建 -nothinking 变体（禁用思考）
             nothinking_variant = model.copy()
             nothinking_variant["name"] = model["name"] + "-nothinking"
             nothinking_variant["displayName"] = model["displayName"] + " (No Thinking)"
             nothinking_variant["description"] = model["description"] + " (thinking disabled)"
             thinking_models.append(nothinking_variant)
-            
-            # Add -maxthinking variant
+
+            # 创建 -maxthinking 变体（最大思考预算）
             maxthinking_variant = model.copy()
             maxthinking_variant["name"] = model["name"] + "-maxthinking"
             maxthinking_variant["displayName"] = model["displayName"] + " (Max Thinking)"
@@ -211,24 +212,24 @@ def _generate_thinking_variants():
             thinking_models.append(maxthinking_variant)
     return thinking_models
 
-# Generate combined variants (search + thinking combinations)
+# 生成搜索与思考的组合变体
 def _generate_combined_variants():
-    """Generate combined search and thinking variants."""
+    """生成搜索增强与思考模式的组合变体"""
     combined_models = []
     for model in BASE_MODELS:
-        # Only add combined variants for models that support content generation
-        # and contain "gemini-2.5-flash", "gemini-2.5-pro" or "gemini-3-pro" in their name
+        # 仅为支持内容生成的模型创建组合变体
+        # 适用模型：gemini-2.5-flash、gemini-2.5-pro、gemini-3-pro
         if ("generateContent" in model["supportedGenerationMethods"] and
             ("gemini-2.5-flash" in model["name"] or "gemini-2.5-pro" in model["name"] or "gemini-3-pro" in model["name"])):
             
-            # search + nothinking
+            # 搜索 + 无思考模式
             search_nothinking = model.copy()
             search_nothinking["name"] = model["name"] + "-search-nothinking"
             search_nothinking["displayName"] = model["displayName"] + " with Google Search (No Thinking)"
             search_nothinking["description"] = model["description"] + " (includes Google Search grounding, thinking disabled)"
             combined_models.append(search_nothinking)
-            
-            # search + maxthinking
+
+            # 搜索 + 最大思考模式
             search_maxthinking = model.copy()
             search_maxthinking["name"] = model["name"] + "-search-maxthinking"
             search_maxthinking["displayName"] = model["displayName"] + " with Google Search (Max Thinking)"
@@ -236,62 +237,62 @@ def _generate_combined_variants():
             combined_models.append(search_maxthinking)
     return combined_models
 
-# Supported Models (includes base models, search variants, and thinking variants)
-# Combine all models and then sort them by name to group variants together
+# 完整的支持模型列表（包括基础模型、搜索变体和思考变体）
+# 合并所有模型并按名称排序，以便将变体分组展示
 all_models = BASE_MODELS + _generate_search_variants() + _generate_thinking_variants()
 SUPPORTED_MODELS = sorted(all_models, key=lambda x: x['name'])
 
-# Helper function to get base model name from any variant
+# 工具函数：提取基础模型名称
 def get_base_model_name(model_name):
-    """Convert variant model name to base model name."""
-    # Remove all possible suffixes in order
+    """从变体模型名称中提取基础模型名称"""
+    # 按顺序移除所有可能的变体后缀
     suffixes = ["-maxthinking", "-nothinking", "-search"]
     for suffix in suffixes:
         if model_name.endswith(suffix):
             return model_name[:-len(suffix)]
     return model_name
 
-# Helper function to check if model uses search grounding
+# 工具函数：判断是否为搜索增强模型
 def is_search_model(model_name):
-    """Check if model name indicates search grounding should be enabled."""
+    """检查模型名称是否包含搜索变体标识"""
     return "-search" in model_name
 
-# Helper function to check if model uses no thinking
+# 工具函数：判断是否为无思考模式
 def is_nothinking_model(model_name):
-    """Check if model name indicates thinking should be disabled."""
+    """检查模型名称是否包含无思考变体标识"""
     return "-nothinking" in model_name
 
-# Helper function to check if model uses max thinking
+# 工具函数：判断是否为最大思考模式
 def is_maxthinking_model(model_name):
-    """Check if model name indicates maximum thinking budget should be used."""
+    """检查模型名称是否包含最大思考变体标识"""
     return "-maxthinking" in model_name
 
-# Helper function to get thinking budget for a model
+# 工具函数：获取思考预算配置
 def get_thinking_budget(model_name):
-    """Get the appropriate thinking budget for a model based on its name and variant."""
+    """根据模型名称和变体类型返回对应的思考预算值"""
     base_model = get_base_model_name(model_name)
     
     if is_nothinking_model(model_name):
         if "gemini-2.5-flash" in base_model:
-            return 0  # No thinking for flash
+            return 0  # flash 模型完全禁用思考
         elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
-            return 128  # Limited thinking for pro
+            return 128  # pro 模型保留最小思考预算
     elif is_maxthinking_model(model_name):
         if "gemini-2.5-flash" in base_model:
             return 24576
         elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
             return 32768
     else:
-        # Default thinking budget for regular models
-        return -1  # Default for all models
+        # 常规模型使用默认思考预算
+        return -1  # -1 表示使用模型默认值
 
-# Helper function to check if thinking should be included in output
+# 工具函数：判断是否应返回思考内容
 def should_include_thoughts(model_name):
-    """Check if thoughts should be included in the response."""
+    """检查响应中是否应包含思考过程"""
     if is_nothinking_model(model_name):
-        # For nothinking mode, still include thoughts if it's a pro model
+        # nothinking 模式下，pro 模型仍返回思考内容
         base_model = get_base_model_name(model_name)
         return "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model
     else:
-        # For all other modes, include thoughts
+        # 其他模式均返回思考内容
         return True

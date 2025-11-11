@@ -2,18 +2,18 @@ import platform
 from .config import CLI_VERSION
 
 def get_user_agent():
-    """Generate User-Agent string matching gemini-cli format."""
+    """生成符合 gemini-cli 格式的 User-Agent 字符串"""
     version = CLI_VERSION
     system = platform.system()
     arch = platform.machine()
     return f"GeminiCLI/{version} ({system}; {arch})"
 
 def get_platform_string():
-    """Generate platform string matching gemini-cli format."""
+    """生成符合 gemini-cli 格式的平台标识字符串"""
     system = platform.system().upper()
     arch = platform.machine().upper()
-    
-    # Map to gemini-cli platform format
+
+    # 将系统和架构信息映射为 gemini-cli 平台格式
     if system == "DARWIN":
         if arch in ["ARM64", "AARCH64"]:
             return "DARWIN_ARM64"

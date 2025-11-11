@@ -1,6 +1,7 @@
 """
-OpenAI Format Transformers - Handles conversion between OpenAI and Gemini API formats.
-This module contains all the logic for transforming requests and responses between the two formats.
+OpenAI 格式转换器模块 - 处理 OpenAI 与 Gemini API 格式互转
+
+本模块包含 OpenAI 和 Gemini API 之间请求/响应格式转换的全部逻辑。
 """
 import json
 import time
@@ -22,33 +23,33 @@ from .config import (
 
 def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dict[str, Any]:
     """
-    Transform an OpenAI chat completion request to Gemini format.
-    
-    Args:
-        openai_request: OpenAI format request
-        
-    Returns:
-        Dictionary in Gemini API format
+    转换 OpenAI 聊天完成请求为 Gemini 格式
+
+    参数：
+        openai_request: OpenAI 格式的请求对象
+
+    返回：
+        Gemini API 格式的字典
     """
     contents = []
-    
-    # Process each message in the conversation
+
+    # 处理对话历史中的每条消息
     for message in openai_request.messages:
         role = message.role
         
-        # Map OpenAI roles to Gemini roles
+        # 映射角色名称：OpenAI → Gemini
         if role == "assistant":
             role = "model"
         elif role == "system":
-            role = "user"  # Gemini treats system messages as user messages
-        
-        # Handle different content types (string vs list of parts)
+            role = "user"  # Gemini 中系统消息被视为用户消息
+
+        # 处理不同的内容类型（纯文本字符串或多部分列表）
         if isinstance(message.content, list):
             parts = []
             for part in message.content:
                 if part.get("type") == "text":
                     text_value = part.get("text", "") or ""
-                    # Extract Markdown images (data URIs) into inline image parts, preserving surrounding text
+                    # 提取 Markdown 图片（数据 URI）为内联图片，保留周围文本
                     pattern = re.compile(r'!\[[^\]]*\]\(([^)]+)\)')
                     matches = list(pattern.finditer(text_value))
                     if not matches:
@@ -57,20 +58,20 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                         last_idx = 0
                         for m in matches:
                             url = m.group(1).strip().strip('"').strip("'")
-                            # Emit text before the image
+                            # 提取图片前的文本内容
                             if m.start() > last_idx:
                                 before = text_value[last_idx:m.start()]
                                 if before:
                                     parts.append({"text": before})
-                            # Handle data URI images: data:image/png;base64,xxxx
+                            # 处理数据 URI 格式图片：data:image/png;base64,xxxx
                             if url.startswith("data:"):
                                 try:
                                     header, base64_data = url.split(",", 1)
-                                    # header looks like: data:image/png;base64
+                                    # header 格式示例：data:image/png;base64
                                     mime_type = ""
                                     if ":" in header:
                                         mime_type = header.split(":", 1)[1].split(";", 1)[0] or ""
-                                    # Only convert to inlineData if it's an image
+                                    # 仅图片类型 MIME 转换为 inlineData 格式
                                     if mime_type.startswith("image/"):
                                         parts.append({
                                             "inlineData": {
@@ -79,16 +80,16 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                                             }
                                         })
                                     else:
-                                        # Non-image data URIs: keep as markdown text
+                                        # 非图片数据 URI：保留为 Markdown 文本
                                         parts.append({"text": text_value[m.start():m.end()]})
                                 except Exception:
-                                    # Fallback: keep original markdown as text if parsing fails
+                                    # 解析失败时保留原始 Markdown 文本
                                     parts.append({"text": text_value[m.start():m.end()]})
                             else:
-                                # Non-data URIs: keep markdown as text (cannot inline without fetching)
+                                # 非数据 URI：保留为 Markdown 文本（无法内联远程资源）
                                 parts.append({"text": text_value[m.start():m.end()]})
                             last_idx = m.end()
-                        # Tail text after last image
+                        # 提取最后一张图片后的文本内容
                         if last_idx < len(text_value):
                             tail = text_value[last_idx:]
                             if tail:
@@ -96,7 +97,7 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                 elif part.get("type") == "image_url":
                     image_url = part.get("image_url", {}).get("url")
                     if image_url:
-                        # Parse data URI: "data:image/jpeg;base64,{base64_image}"
+                        # 解析数据 URI："data:image/jpeg;base64,{base64_image}"
                         try:
                             mime_type, base64_data = image_url.split(";")
                             _, mime_type = mime_type.split(":")
@@ -111,28 +112,28 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                             continue
             contents.append({"role": role, "parts": parts})
         else:
-            # Simple text content; extract Markdown images (data URIs) into inline image parts
+            # 纯文本内容：提取 Markdown 图片（数据 URI）为内联图片
             text = message.content or ""
             parts = []
-            # Convert Markdown images: ![alt](data:<mimeType>;base64,<data>)
+            # 转换 Markdown 图片格式：![alt](data:<mimeType>;base64,<data>)
             pattern = re.compile(r'!\[[^\]]*\]\(([^)]+)\)')
             last_idx = 0
             for m in pattern.finditer(text):
                 url = m.group(1).strip().strip('"').strip("'")
-                # Emit text before the image
+                # 提取图片前的文本内容
                 if m.start() > last_idx:
                     before = text[last_idx:m.start()]
                     if before:
                         parts.append({"text": before})
-                # Handle data URI images: data:image/png;base64,xxxx
+                # 处理数据 URI 格式图片：data:image/png;base64,xxxx
                 if url.startswith("data:"):
                     try:
                         header, base64_data = url.split(",", 1)
-                        # header looks like: data:image/png;base64
+                        # header 格式示例：data:image/png;base64
                         mime_type = ""
                         if ":" in header:
                             mime_type = header.split(":", 1)[1].split(";", 1)[0] or ""
-                        # Only convert to inlineData if it's an image
+                        # 仅图片类型 MIME 转换为 inlineData 格式
                         if mime_type.startswith("image/"):
                             parts.append({
                                 "inlineData": {
@@ -141,23 +142,23 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                                 }
                             })
                         else:
-                            # Non-image data URIs: keep as markdown text
+                            # 非图片数据 URI：保留为 Markdown 文本
                             parts.append({"text": text[m.start():m.end()]})
                     except Exception:
-                        # Fallback: keep original markdown as text if parsing fails
+                        # 解析失败时保留原始 Markdown 文本
                         parts.append({"text": text[m.start():m.end()]})
                 else:
-                    # Non-data URIs: keep markdown as text (cannot inline without fetching)
+                    # 非数据 URI：保留为 Markdown 文本（无法内联远程资源）
                     parts.append({"text": text[m.start():m.end()]})
                 last_idx = m.end()
-            # Tail text after last image
+            # 提取最后一张图片后的文本内容
             if last_idx < len(text):
                 tail = text[last_idx:]
                 if tail:
                     parts.append({"text": tail})
             contents.append({"role": role, "parts": parts if parts else [{"text": text}]})
-    
-    # Map OpenAI generation parameters to Gemini format
+
+    # 映射 OpenAI 生成参数为 Gemini 格式
     generation_config = {}
     if openai_request.temperature is not None:
         generation_config["temperature"] = openai_request.temperature
@@ -166,57 +167,57 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
     if openai_request.max_tokens is not None:
         generation_config["maxOutputTokens"] = openai_request.max_tokens
     if openai_request.stop is not None:
-        # Gemini supports stop sequences
+        # 映射停止序列（Gemini 原生支持）
         if isinstance(openai_request.stop, str):
             generation_config["stopSequences"] = [openai_request.stop]
         elif isinstance(openai_request.stop, list):
             generation_config["stopSequences"] = openai_request.stop
     if openai_request.frequency_penalty is not None:
-        # Map frequency_penalty to Gemini's frequencyPenalty
+        # 映射频率惩罚参数
         generation_config["frequencyPenalty"] = openai_request.frequency_penalty
     if openai_request.presence_penalty is not None:
-        # Map presence_penalty to Gemini's presencePenalty
+        # 映射存在惩罚参数
         generation_config["presencePenalty"] = openai_request.presence_penalty
     if openai_request.n is not None:
-        # Map n (number of completions) to Gemini's candidateCount
+        # 映射完成数量（n → candidateCount）
         generation_config["candidateCount"] = openai_request.n
     if openai_request.seed is not None:
-        # Gemini supports seed for reproducible outputs
+        # 映射随机种子（用于可重现输出）
         generation_config["seed"] = openai_request.seed
     if openai_request.response_format is not None:
-        # Handle JSON mode if specified
+        # 处理响应格式（如 JSON 模式）
         if openai_request.response_format.get("type") == "json_object":
             generation_config["responseMimeType"] = "application/json"
     
     # generation_config["enableEnhancedCivicAnswers"] = False
 
-    # Build the request payload
+    # 构建最终请求负载
     request_payload = {
         "contents": contents,
         "generationConfig": generation_config,
         "safetySettings": DEFAULT_SAFETY_SETTINGS,
-        "model": get_base_model_name(openai_request.model)  # Use base model name for API call
+        "model": get_base_model_name(openai_request.model)  # 使用基础模型名称调用 API
     }
-    
-    # Add Google Search grounding for search models
+
+    # 为搜索模型启用 Google 搜索增强功能
     if is_search_model(openai_request.model):
         request_payload["tools"] = [{"googleSearch": {}}]
     
     if "gemini-2.5-flash-image" not in openai_request.model:
-        # Add thinking configuration for thinking models
+        # 配置思考模型的思考参数
         thinking_budget = None
 
-        # Check if model is an explicit thinking variant (nothinking or maxthinking)
+        # 判断是否为显式思考模式（nothinking 或 maxthinking）
         if is_nothinking_model(openai_request.model) or is_maxthinking_model(openai_request.model):
-            # For explicit thinking variants, ignore reasoning_effort and use variant-specific budget
+            # 显式思考模式：忽略 reasoning_effort，使用预设预算
             thinking_budget = get_thinking_budget(openai_request.model)
         else:
-            # For regular models, check if reasoning_effort was provided in the request
+            # 常规模型：检查是否指定了 reasoning_effort 参数
             reasoning_effort = getattr(openai_request, 'reasoning_effort', None)
             if reasoning_effort:
                 base_model = get_base_model_name(openai_request.model)
                 if reasoning_effort == "minimal":
-                    # Use same budget as nothinking variants
+                    # 最小推理力度（与 nothinking 模式相同）
                     if "gemini-2.5-flash" in base_model:
                         thinking_budget = 0
                     elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
@@ -226,7 +227,7 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                 elif reasoning_effort == "medium":
                     thinking_budget = -1
                 elif reasoning_effort == "high":
-                    # Use same budget as maxthinking variants
+                    # 高推理力度（与 maxthinking 模式相同）
                     if "gemini-2.5-flash" in base_model:
                         thinking_budget = 24576
                     elif "gemini-2.5-pro" in base_model:
@@ -234,7 +235,7 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
                     elif "gemini-3-pro" in base_model:
                         thinking_budget = 45000
             else:
-                # No reasoning_effort provided, use default thinking budget
+                # 未指定 reasoning_effort，使用默认思考预算
                 thinking_budget = get_thinking_budget(openai_request.model)
 
         if thinking_budget is not None:
@@ -248,31 +249,31 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
 
 def gemini_response_to_openai(gemini_response: Dict[str, Any], model: str) -> Dict[str, Any]:
     """
-    Transform a Gemini API response to OpenAI chat completion format.
-    
-    Args:
-        gemini_response: Response from Gemini API
-        model: Model name to include in response
-        
-    Returns:
-        Dictionary in OpenAI chat completion format
+    转换 Gemini API 响应为 OpenAI 聊天完成格式
+
+    参数：
+        gemini_response: Gemini API 返回的响应
+        model: 响应中包含的模型名称
+
+    返回：
+        OpenAI 聊天完成格式的字典
     """
     choices = []
     
     for candidate in gemini_response.get("candidates", []):
         role = candidate.get("content", {}).get("role", "assistant")
-        
-        # Map Gemini roles back to OpenAI roles
+
+        # 映射角色名称：Gemini → OpenAI
         if role == "model":
             role = "assistant"
-        
-        # Extract and separate thinking tokens from regular content
+
+        # 提取并分离思考令牌与常规内容
         parts = candidate.get("content", {}).get("parts", [])
         content_parts = []
         reasoning_content = ""
         
         for part in parts:
-            # Text parts (may include thinking tokens)
+            # 文本部分（可能包含思考令牌）
             if part.get("text") is not None:
                 if part.get("thought", False):
                     reasoning_content += part.get("text", "")
@@ -280,7 +281,7 @@ def gemini_response_to_openai(gemini_response: Dict[str, Any], model: str) -> Di
                     content_parts.append(part.get("text", ""))
                 continue
 
-            # Inline image data -> embed as Markdown data URI
+            # 内联图片数据 -> 嵌入为 Markdown 数据 URI
             inline = part.get("inlineData")
             if inline and inline.get("data"):
                 mime = inline.get("mimeType") or "image/png"
@@ -290,14 +291,14 @@ def gemini_response_to_openai(gemini_response: Dict[str, Any], model: str) -> Di
                 continue
 
         content = "\n\n".join([p for p in content_parts if p is not None])
-        
-        # Build message object
+
+        # 构建消息对象
         message = {
             "role": role,
             "content": content,
         }
-        
-        # Add reasoning_content if there are thinking tokens
+
+        # 若存在思考内容则添加 reasoning_content 字段
         if reasoning_content:
             message["reasoning_content"] = reasoning_content
         
@@ -318,32 +319,32 @@ def gemini_response_to_openai(gemini_response: Dict[str, Any], model: str) -> Di
 
 def gemini_stream_chunk_to_openai(gemini_chunk: Dict[str, Any], model: str, response_id: str) -> Dict[str, Any]:
     """
-    Transform a Gemini streaming response chunk to OpenAI streaming format.
-    
-    Args:
-        gemini_chunk: Single chunk from Gemini streaming response
-        model: Model name to include in response
-        response_id: Consistent ID for this streaming response
-        
-    Returns:
-        Dictionary in OpenAI streaming format
+    转换 Gemini 流式响应块为 OpenAI 流式格式
+
+    参数：
+        gemini_chunk: Gemini 流式响应中的单个数据块
+        model: 响应中包含的模型名称
+        response_id: 流式响应的一致标识符
+
+    返回：
+        OpenAI 流式格式的字典
     """
     choices = []
     
     for candidate in gemini_chunk.get("candidates", []):
         role = candidate.get("content", {}).get("role", "assistant")
-        
-        # Map Gemini roles back to OpenAI roles
+
+        # 映射角色名称：Gemini → OpenAI
         if role == "model":
             role = "assistant"
-        
-        # Extract and separate thinking tokens from regular content
+
+        # 提取并分离思考令牌与常规内容
         parts = candidate.get("content", {}).get("parts", [])
         content_parts = []
         reasoning_content = ""
-        
+
         for part in parts:
-            # Text parts (may include thinking tokens)
+            # 文本部分（可能包含思考令牌）
             if part.get("text") is not None:
                 if part.get("thought", False):
                     reasoning_content += part.get("text", "")
@@ -351,7 +352,7 @@ def gemini_stream_chunk_to_openai(gemini_chunk: Dict[str, Any], model: str, resp
                     content_parts.append(part.get("text", ""))
                 continue
 
-            # Inline image data -> embed as Markdown data URI
+            # 内联图片数据 -> 嵌入为 Markdown 数据 URI
             inline = part.get("inlineData")
             if inline and inline.get("data"):
                 mime = inline.get("mimeType") or "image/png"
@@ -361,8 +362,8 @@ def gemini_stream_chunk_to_openai(gemini_chunk: Dict[str, Any], model: str, resp
                 continue
 
         content = "\n\n".join([p for p in content_parts if p is not None])
-        
-        # Build delta object
+
+        # 构建增量数据对象（delta）
         delta = {}
         if content:
             delta["content"] = content
@@ -386,13 +387,13 @@ def gemini_stream_chunk_to_openai(gemini_chunk: Dict[str, Any], model: str, resp
 
 def _map_finish_reason(gemini_reason: str) -> str:
     """
-    Map Gemini finish reasons to OpenAI finish reasons.
-    
-    Args:
-        gemini_reason: Finish reason from Gemini API
-        
-    Returns:
-        OpenAI-compatible finish reason
+    映射 Gemini 结束原因为 OpenAI 格式
+
+    参数：
+        gemini_reason: Gemini API 返回的结束原因
+
+    返回：
+        OpenAI 兼容的结束原因字符串
     """
     if gemini_reason == "STOP":
         return "stop"

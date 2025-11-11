@@ -1,6 +1,7 @@
 """
-Google API Client - Handles all communication with Google's Gemini API.
-This module is used by both OpenAI compatibility layer and native Gemini endpoints.
+Google API 客户端模块 - 负责与 Google Gemini API 的通信
+
+本模块为 OpenAI 兼容层和原生 Gemini 端点提供统一的 API 通信接口。
 """
 import json
 import logging
@@ -24,16 +25,16 @@ import asyncio
 
 def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
     """
-    Send a request to Google's Gemini API.
-    
-    Args:
-        payload: The request payload in Gemini format
-        is_streaming: Whether this is a streaming request
-        
-    Returns:
-        FastAPI Response object
+    向 Google Gemini API 发送请求
+
+    参数：
+        payload: Gemini 格式的请求负载
+        is_streaming: 是否为流式请求
+
+    返回：
+        FastAPI Response 对象
     """
-    # Get and validate credentials
+    # 获取并验证身份凭据
     creds = get_credentials()
     if not creds:
         return Response(
@@ -42,7 +43,7 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
         )
     
 
-    # Refresh credentials if needed
+    # 若凭据已过期且存在刷新令牌，则刷新凭据
     if creds.expired and creds.refresh_token:
         try:
             creds.refresh(GoogleAuthRequest())
@@ -58,27 +59,27 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
             status_code=500
         )
 
-    # Get project ID and onboard user
+    # 获取项目 ID 并完成用户引导流程
     proj_id = get_user_project_id(creds)
     if not proj_id:
         return Response(content="Failed to get user project ID.", status_code=500)
     
     onboard_user(creds, proj_id)
 
-    # Build the final payload with project info
+    # 构建包含项目信息的最终请求负载
     final_payload = {
         "model": payload.get("model"),
         "project": proj_id,
         "request": payload.get("request", {})
     }
 
-    # Determine the action and URL
+    # 确定请求操作类型和目标 URL
     action = "streamGenerateContent" if is_streaming else "generateContent"
     target_url = f"{CODE_ASSIST_ENDPOINT}/v1internal:{action}"
     if is_streaming:
         target_url += "?alt=sse"
 
-    # Build request headers
+    # 构建 HTTP 请求头
     request_headers = {
         "Authorization": f"Bearer {creds.token}",
         "Content-Type": "application/json",
@@ -87,7 +88,7 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
 
     final_post_data = json.dumps(final_payload)
 
-    # Send the request
+    # 发送请求
     try:
         if is_streaming:
             resp = requests.post(target_url, data=final_post_data, headers=request_headers, stream=True)
@@ -112,9 +113,9 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
 
 
 def _handle_streaming_response(resp) -> StreamingResponse:
-    """Handle streaming response from Google API."""
-    
-    # Check for HTTP errors before starting to stream
+    """处理 Google API 返回的流式响应"""
+
+    # 在流式传输前检查 HTTP 错误状态
     if resp.status_code != 200:
         logging.error(f"Google API returned status {resp.status_code}: {resp.text}")
         error_message = f"Google API error: {resp.status_code}"
@@ -125,7 +126,7 @@ def _handle_streaming_response(resp) -> StreamingResponse:
         except:
             pass
         
-        # Return error as a streaming response
+        # 以流式格式返回错误信息
         async def error_generator():
             error_response = {
                 "error": {
@@ -218,7 +219,7 @@ def _handle_streaming_response(resp) -> StreamingResponse:
 
 
 def _handle_non_streaming_response(resp) -> Response:
-    """Handle non-streaming response from Google API."""
+    """处理 Google API 返回的非流式响应"""
     if resp.status_code == 200:
         try:
             google_api_response = resp.text
@@ -239,10 +240,10 @@ def _handle_non_streaming_response(resp) -> Response:
                 media_type=resp.headers.get("Content-Type")
             )
     else:
-        # Log the error details
+        # 记录错误详细信息
         logging.error(f"Google API returned status {resp.status_code}: {resp.text}")
-        
-        # Try to parse error response and provide meaningful error message
+
+        # 解析错误响应并构建有意义的错误信息
         try:
             error_data = resp.json()
             if "error" in error_data:
@@ -261,8 +262,8 @@ def _handle_non_streaming_response(resp) -> Response:
                 )
         except (json.JSONDecodeError, KeyError):
             pass
-        
-        # Fallback to original response if we can't parse the error
+
+        # 若无法解析错误，则返回原始响应
         return Response(
             content=resp.content,
             status_code=resp.status_code,
@@ -272,16 +273,17 @@ def _handle_non_streaming_response(resp) -> Response:
 
 def build_gemini_payload_from_openai(openai_payload: dict) -> dict:
     """
-    Build a Gemini API payload from an OpenAI-transformed request.
-    This is used when OpenAI requests are converted to Gemini format.
+    从 OpenAI 转换后的请求构建 Gemini API 负载
+
+    在 OpenAI 请求转换为 Gemini 格式后调用此函数。
     """
-    # Extract model from the payload
+    # 从负载中提取模型名称
     model = openai_payload.get("model")
     
-    # Get safety settings or use defaults
+    # 获取安全设置（若无则使用默认配置）
     safety_settings = openai_payload.get("safetySettings", DEFAULT_SAFETY_SETTINGS)
-    
-    # Build the request portion
+
+    # 构建请求数据结构
     request_data = {
         "contents": openai_payload.get("contents"),
         "systemInstruction": openai_payload.get("systemInstruction"),
@@ -292,7 +294,7 @@ def build_gemini_payload_from_openai(openai_payload: dict) -> dict:
         "generationConfig": openai_payload.get("generationConfig", {}),
     }
     
-    # Remove any keys with None values
+    # 过滤掉值为 None 的键
     request_data = {k: v for k, v in request_data.items() if v is not None}
     
     return {
@@ -303,8 +305,9 @@ def build_gemini_payload_from_openai(openai_payload: dict) -> dict:
 
 def build_gemini_payload_from_native(native_request: dict, model_from_path: str) -> dict:
     """
-    Build a Gemini API payload from a native Gemini request.
-    This is used for direct Gemini API calls.
+    从原生 Gemini 请求构建 API 负载
+
+    用于处理直接的 Gemini API 调用。
     """
     native_request["safetySettings"] = DEFAULT_SAFETY_SETTINGS
     
@@ -317,7 +320,7 @@ def build_gemini_payload_from_native(native_request: dict, model_from_path: str)
         native_request["generationConfig"]["thinkingConfig"] = {}
     
     if "gemini-2.5-flash-image" not in model_from_path:
-        # Configure thinking based on model variant
+        # 根据模型类型配置思考预算
         thinking_budget = get_thinking_budget(model_from_path)
         include_thoughts = should_include_thoughts(model_from_path)
     
@@ -327,15 +330,15 @@ def build_gemini_payload_from_native(native_request: dict, model_from_path: str)
         else:
             native_request["generationConfig"]["thinkingConfig"]["thinkingBudget"] = thinking_budget
     
-    # Add Google Search grounding for search models
+    # 为搜索模型启用 Google 搜索增强功能
     if is_search_model(model_from_path):
         if "tools" not in native_request:
             native_request["tools"] = []
-        # Add googleSearch tool if not already present
+        # 添加 Google 搜索工具（若尚未配置）
         if not any(tool.get("googleSearch") for tool in native_request["tools"]):
             native_request["tools"].append({"googleSearch": {}})
     
     return {
-        "model": get_base_model_name(model_from_path),  # Use base model name for API call
+        "model": get_base_model_name(model_from_path),  # 使用基础模型名称调用 API
         "request": native_request
     }

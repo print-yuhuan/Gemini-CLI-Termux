@@ -20,11 +20,11 @@ from .config import (
     CODE_ASSIST_ENDPOINT, GEMINI_AUTH_PASSWORD
 )
 
-# --- Global State ---
+# --- 全局状态变量 ---
 credentials = None
 user_project_id = None
 onboarding_complete = False
-credentials_from_env = False  # Track if credentials came from environment variable
+credentials_from_env = False  # 标记凭据来源是否为环境变量
 
 security = HTTPBasic()
 
@@ -46,25 +46,25 @@ class _OAuthCallbackHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"<h1>Authentication failed.</h1><p>Please try again.</p>")
 
 def authenticate_user(request: Request):
-    """Authenticate the user with multiple methods."""
-    # Check for API key in query parameters first (for Gemini client compatibility)
+    """使用多种方式进行用户身份验证"""
+    # 优先级1：检查查询参数中的 API 密钥（Gemini 客户端兼容）
     api_key = request.query_params.get("key")
     if api_key and api_key == GEMINI_AUTH_PASSWORD:
         return "api_key_user"
     
-    # Check for API key in x-goog-api-key header (Google SDK format)
+    # 优先级2：检查 x-goog-api-key 请求头（Google SDK 格式）
     goog_api_key = request.headers.get("x-goog-api-key", "")
     if goog_api_key and goog_api_key == GEMINI_AUTH_PASSWORD:
         return "goog_api_key_user"
-    
-    # Check for API key in Authorization header (Bearer token format)
+
+    # 优先级3：检查 Authorization 请求头中的 Bearer 令牌
     auth_header = request.headers.get("authorization", "")
     if auth_header.startswith("Bearer "):
         bearer_token = auth_header[7:]
         if bearer_token == GEMINI_AUTH_PASSWORD:
             return "bearer_user"
     
-    # Check for HTTP Basic Authentication
+    # 优先级4：检查 HTTP Basic 基本身份验证
     if auth_header.startswith("Basic "):
         try:
             encoded_credentials = auth_header[6:]
@@ -75,7 +75,7 @@ def authenticate_user(request: Request):
         except Exception:
             pass
     
-    # If none of the authentication methods work
+    # 所有验证方式均失败
     raise HTTPException(
         status_code=401,
         detail="Invalid authentication credentials. Use HTTP Basic Auth, Bearer token, 'key' query parameter, or 'x-goog-api-key' header.",
@@ -84,15 +84,15 @@ def authenticate_user(request: Request):
 
 def save_credentials(creds, project_id=None):
     global credentials_from_env
-    
-    # Don't save credentials to file if they came from environment variable,
-    # but still save project_id if provided and no file exists or file lacks project_id
+
+    # 环境变量来源的凭据不写入文件，
+    # 但若提供 project_id 且文件中缺失，则更新 project_id
     if credentials_from_env:
         if project_id and os.path.exists(CREDENTIAL_FILE):
             try:
                 with open(CREDENTIAL_FILE, "r") as f:
                     existing_data = json.load(f)
-                # Only update project_id if it's missing from the file
+                # 仅在文件中缺少 project_id 时更新
                 if "project_id" not in existing_data:
                     existing_data["project_id"] = project_id
                     with open(CREDENTIAL_FILE, "w") as f:
@@ -117,7 +117,7 @@ def save_credentials(creds, project_id=None):
             expiry_utc = creds.expiry.replace(tzinfo=timezone.utc)
         else:
             expiry_utc = creds.expiry
-        # Keep the existing ISO format for backward compatibility, but ensure it's properly handled during loading
+        # 保持 ISO 格式以实现向后兼容，确保加载时正确处理
         creds_data["expiry"] = expiry_utc.isoformat()
     
     if project_id:
@@ -137,69 +137,69 @@ def save_credentials(creds, project_id=None):
     
 
 def get_credentials(allow_oauth_flow=True):
-    """Loads credentials matching gemini-cli OAuth2 flow."""
+    """加载符合 gemini-cli OAuth2 流程的凭据"""
     global credentials, credentials_from_env, user_project_id
     
     if credentials and credentials.token:
         return credentials
     
-    # Check for credentials in environment variable (JSON string)
+    # 检查环境变量中的凭据（JSON 字符串格式）
     env_creds_json = os.getenv("GEMINI_CREDENTIALS")
     if env_creds_json:
-        # First, check if we have a refresh token - if so, we should always be able to load credentials
+        # 优先检查刷新令牌 - 若存在，应始终能够加载凭据
         try:
             raw_env_creds_data = json.loads(env_creds_json)
             
-            # SAFEGUARD: If refresh_token exists, we should always load credentials successfully
+            # 安全保障：若存在 refresh_token，必须确保凭据加载成功
             if "refresh_token" in raw_env_creds_data and raw_env_creds_data["refresh_token"]:
                 logging.info("Environment refresh token found - ensuring credentials load successfully")
                 
                 try:
                     creds_data = raw_env_creds_data.copy()
-                    
-                    # Handle different credential formats
+
+                    # 兼容不同的凭据格式
                     if "access_token" in creds_data and "token" not in creds_data:
                         creds_data["token"] = creds_data["access_token"]
                     
                     if "scope" in creds_data and "scopes" not in creds_data:
                         creds_data["scopes"] = creds_data["scope"].split()
                     
-                    # Handle problematic expiry formats that cause parsing errors
+                    # 处理导致解析错误的有问题的过期格式
                     if "expiry" in creds_data:
                         expiry_str = creds_data["expiry"]
-                        # If expiry has timezone info that causes parsing issues, try to fix it
+                        # 如果过期时间具有导致解析问题的时区信息，尝试修复它
                         if isinstance(expiry_str, str) and ("+00:00" in expiry_str or "Z" in expiry_str):
                             try:
-                                # Try to parse and reformat the expiry to a format Google Credentials can handle
+                                # 尝试解析并重新格式化过期时间为 Google 凭据可处理的格式
                                 from datetime import datetime
                                 if "+00:00" in expiry_str:
-                                    # Handle ISO format with timezone offset
+                                    # 处理带时区偏移的 ISO 格式
                                     parsed_expiry = datetime.fromisoformat(expiry_str)
                                 elif expiry_str.endswith("Z"):
-                                    # Handle ISO format with Z suffix
+                                    # 处理带 Z 后缀的 ISO 格式
                                     parsed_expiry = datetime.fromisoformat(expiry_str.replace('Z', '+00:00'))
                                 else:
                                     parsed_expiry = datetime.fromisoformat(expiry_str)
                                 
-                                # Convert to UTC timestamp format that Google Credentials library expects
+                                # 转换为 Google 凭据库期望的 UTC 时间戳格式
                                 import time
                                 timestamp = parsed_expiry.timestamp()
                                 creds_data["expiry"] = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
                                 logging.info(f"Converted environment expiry format from '{expiry_str}' to '{creds_data['expiry']}'")
                             except Exception as expiry_error:
                                 logging.warning(f"Could not parse environment expiry format '{expiry_str}': {expiry_error}, removing expiry field")
-                                # Remove problematic expiry field - credentials will be treated as expired but still loadable
+                                # 移除问题字段 - 凭据将视为已过期但仍可加载
                                 del creds_data["expiry"]
                     
                     credentials = Credentials.from_authorized_user_info(creds_data, SCOPES)
-                    credentials_from_env = True  # Mark as environment credentials
+                    credentials_from_env = True  # 标记为环境来源
 
-                    # Extract project_id from environment credentials if available
+                    # 从环境凭据中提取 project_id（若存在）
                     if "project_id" in raw_env_creds_data:
                         user_project_id = raw_env_creds_data["project_id"]
                         logging.info(f"Extracted project_id from environment credentials: {user_project_id}")
 
-                    # Try to refresh if expired and refresh token exists
+                    # 如果已过期且存在刷新令牌，尝试刷新
                     if credentials.expired and credentials.refresh_token:
                         try:
                             logging.info("Environment credentials expired, attempting refresh...")
@@ -216,7 +216,7 @@ def get_credentials(allow_oauth_flow=True):
                     return credentials
                     
                 except Exception as parsing_error:
-                    # SAFEGUARD: Even if parsing fails, try to create minimal credentials with refresh token
+                    # 保障措施：即使解析失败，也尝试使用刷新令牌创建最小凭据
                     logging.warning(f"Failed to parse environment credentials normally: {parsing_error}")
                     logging.info("Attempting to create minimal environment credentials with refresh token")
                     
@@ -229,14 +229,14 @@ def get_credentials(allow_oauth_flow=True):
                         }
                         
                         credentials = Credentials.from_authorized_user_info(minimal_creds_data, SCOPES)
-                        credentials_from_env = True  # Mark as environment credentials
-                        
-                        # Extract project_id from environment credentials if available
+                        credentials_from_env = True  # 标记为环境来源
+
+                        # 从环境凭据中提取 project_id（若存在）
                         if "project_id" in raw_env_creds_data:
                             user_project_id = raw_env_creds_data["project_id"]
                             logging.info(f"Extracted project_id from minimal environment credentials: {user_project_id}")
                         
-                        # Force refresh since we don't have a valid token
+                        # 强制刷新，因为我们没有有效的令牌
                         try:
                             logging.info("Refreshing minimal environment credentials...")
                             credentials.refresh(GoogleAuthRequest())
@@ -244,73 +244,73 @@ def get_credentials(allow_oauth_flow=True):
                             return credentials
                         except Exception as refresh_error:
                             logging.error(f"Failed to refresh minimal environment credentials: {refresh_error}")
-                            # Even if refresh fails, return the credentials - they might still work
+                            # 即使刷新失败也返回凭据 - 可能仍然有效
                             return credentials
                             
                     except Exception as minimal_error:
                         logging.error(f"Failed to create minimal environment credentials: {minimal_error}")
-                        # Fall through to file-based credentials
+                        # 降级至基于文件的凭据
             else:
                 logging.warning("No refresh token found in environment credentials")
-                # Fall through to file-based credentials
+                # 降级到基于文件的凭据
                 
         except Exception as e:
             logging.error(f"Failed to parse environment credentials JSON: {e}")
-            # Fall through to file-based credentials
+            # 降级到基于文件的凭据
     
-    # Check for credentials file (CREDENTIAL_FILE now includes GOOGLE_APPLICATION_CREDENTIALS path if set)
+    # 检查凭据文件（若设置，CREDENTIAL_FILE 包含 GOOGLE_APPLICATION_CREDENTIALS 路径）
     if os.path.exists(CREDENTIAL_FILE):
-        # First, check if we have a refresh token - if so, we should always be able to load credentials
+        # 优先检查刷新令牌 - 若存在，应始终能够加载凭据
         try:
             with open(CREDENTIAL_FILE, "r") as f:
                 raw_creds_data = json.load(f)
             
-            # SAFEGUARD: If refresh_token exists, we should always load credentials successfully
+            # 安全保障：若存在 refresh_token，必须确保凭据加载成功
             if "refresh_token" in raw_creds_data and raw_creds_data["refresh_token"]:
                 logging.info("Refresh token found - ensuring credentials load successfully")
                 
                 try:
                     creds_data = raw_creds_data.copy()
-                    
-                    # Handle different credential formats
+
+                    # 兼容不同的凭据格式
                     if "access_token" in creds_data and "token" not in creds_data:
                         creds_data["token"] = creds_data["access_token"]
                     
                     if "scope" in creds_data and "scopes" not in creds_data:
                         creds_data["scopes"] = creds_data["scope"].split()
                     
-                    # Handle problematic expiry formats that cause parsing errors
+                    # 处理导致解析错误的有问题的过期格式
                     if "expiry" in creds_data:
                         expiry_str = creds_data["expiry"]
-                        # If expiry has timezone info that causes parsing issues, try to fix it
+                        # 如果过期时间具有导致解析问题的时区信息，尝试修复它
                         if isinstance(expiry_str, str) and ("+00:00" in expiry_str or "Z" in expiry_str):
                             try:
-                                # Try to parse and reformat the expiry to a format Google Credentials can handle
+                                # 尝试解析并重新格式化过期时间为 Google 凭据可处理的格式
                                 from datetime import datetime
                                 if "+00:00" in expiry_str:
-                                    # Handle ISO format with timezone offset
+                                    # 处理带时区偏移的 ISO 格式
                                     parsed_expiry = datetime.fromisoformat(expiry_str)
                                 elif expiry_str.endswith("Z"):
-                                    # Handle ISO format with Z suffix
+                                    # 处理带 Z 后缀的 ISO 格式
                                     parsed_expiry = datetime.fromisoformat(expiry_str.replace('Z', '+00:00'))
                                 else:
                                     parsed_expiry = datetime.fromisoformat(expiry_str)
                                 
-                                # Convert to UTC timestamp format that Google Credentials library expects
+                                # 转换为 Google 凭据库期望的 UTC 时间戳格式
                                 import time
                                 timestamp = parsed_expiry.timestamp()
                                 creds_data["expiry"] = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
                                 logging.info(f"Converted expiry format from '{expiry_str}' to '{creds_data['expiry']}'")
                             except Exception as expiry_error:
                                 logging.warning(f"Could not parse expiry format '{expiry_str}': {expiry_error}, removing expiry field")
-                                # Remove problematic expiry field - credentials will be treated as expired but still loadable
+                                # 移除问题字段 - 凭据将视为已过期但仍可加载
                                 del creds_data["expiry"]
                     
                     credentials = Credentials.from_authorized_user_info(creds_data, SCOPES)
-                    # Mark as environment credentials if GOOGLE_APPLICATION_CREDENTIALS was used
+                    # 若使用 GOOGLE_APPLICATION_CREDENTIALS，标记为环境来源
                     credentials_from_env = bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
-                    # Try to refresh if expired and refresh token exists
+                    # 若已过期且有刷新令牌，尝试刷新
                     if credentials.expired and credentials.refresh_token:
                         try:
                             logging.info("File-based credentials expired, attempting refresh...")
@@ -328,7 +328,7 @@ def get_credentials(allow_oauth_flow=True):
                     return credentials
                     
                 except Exception as parsing_error:
-                    # SAFEGUARD: Even if parsing fails, try to create minimal credentials with refresh token
+                    # 保障措施：即使解析失败，也尝试使用刷新令牌创建最小凭据
                     logging.warning(f"Failed to parse credentials normally: {parsing_error}")
                     logging.info("Attempting to create minimal credentials with refresh token")
                     
@@ -342,8 +342,8 @@ def get_credentials(allow_oauth_flow=True):
                         
                         credentials = Credentials.from_authorized_user_info(minimal_creds_data, SCOPES)
                         credentials_from_env = bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-                        
-                        # Force refresh since we don't have a valid token
+
+                        # 强制刷新（因缺少有效令牌）
                         try:
                             logging.info("Refreshing minimal credentials...")
                             credentials.refresh(GoogleAuthRequest())
@@ -352,21 +352,21 @@ def get_credentials(allow_oauth_flow=True):
                             return credentials
                         except Exception as refresh_error:
                             logging.error(f"Failed to refresh minimal credentials: {refresh_error}")
-                            # Even if refresh fails, return the credentials - they might still work
+                            # 即使刷新失败也返回凭据 - 可能仍然有效
                             return credentials
                             
                     except Exception as minimal_error:
                         logging.error(f"Failed to create minimal credentials: {minimal_error}")
-                        # Fall through to new login as last resort
+                        # 作为最后手段，降级至新登录流程
             else:
                 logging.warning("No refresh token found in credentials file")
-                # Fall through to new login
+                # 降级到新登录
                 
         except Exception as e:
             logging.error(f"Failed to read credentials file {CREDENTIAL_FILE}: {e}")
-            # Fall through to new login only if file is completely unreadable
+            # 仅当文件完全无法读取时，降级至新登录流程
 
-    # Only start OAuth flow if explicitly allowed
+    # 仅在明确允许的情况下启动 OAuth 授权流程
     if not allow_oauth_flow:
         logging.info("OAuth flow not allowed - returning None (credentials will be required on first request)")
         return None
@@ -421,7 +421,7 @@ def get_credentials(allow_oauth_flow=True):
     try:
         flow.fetch_token(code=auth_code)
         credentials = flow.credentials
-        credentials_from_env = False  # Mark as file-based credentials
+        credentials_from_env = False  # 标记为文件来源
         save_credentials(credentials)
         logging.info("Authentication successful! Credentials saved.")
         return credentials
@@ -432,7 +432,7 @@ def get_credentials(allow_oauth_flow=True):
         oauthlib.oauth2.rfc6749.parameters.validate_token_parameters = original_validate
 
 def onboard_user(creds, project_id):
-    """Ensures the user is onboarded, matching gemini-cli setupUser behavior."""
+    """确保用户已完成引导流程，匹配 gemini-cli setupUser 行为"""
     global onboarding_complete
     if onboarding_complete:
         return
@@ -515,10 +515,10 @@ def onboard_user(creds, project_id):
         raise Exception(f"User onboarding failed due to an unexpected error: {str(e)}")
 
 def get_user_project_id(creds):
-    """Gets the user's project ID matching gemini-cli setupUser logic."""
+    """获取用户项目 ID，匹配 gemini-cli setupUser 逻辑"""
     global user_project_id
-    
-    # Priority 1: Check environment variable first (always check, even if user_project_id is set)
+
+    # 优先级1：检查环境变量（始终检查，即使已设置 user_project_id）
     env_project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if env_project_id:
         logging.info(f"Using project ID from GOOGLE_CLOUD_PROJECT environment variable: {env_project_id}")
@@ -526,12 +526,12 @@ def get_user_project_id(creds):
         save_credentials(creds, user_project_id)
         return user_project_id
     
-    # If we already have a cached project_id and no env var override, use it
+    # 若已缓存 project_id 且无环境变量覆盖，直接使用
     if user_project_id:
         logging.info(f"Using cached project ID: {user_project_id}")
         return user_project_id
 
-    # Priority 2: Check cached project ID in credential file
+    # 优先级2：检查凭据文件中缓存的项目 ID
     if os.path.exists(CREDENTIAL_FILE):
         try:
             with open(CREDENTIAL_FILE, "r") as f:
@@ -544,8 +544,8 @@ def get_user_project_id(creds):
         except Exception as e:
             logging.warning(f"Could not read project_id from credential file: {e}")
 
-    # Priority 3: Make API call to discover project ID
-    # Ensure we have valid credentials for the API call
+    # 优先级3：通过 API 调用获取项目 ID
+    # 确保拥有 API 调用所需的有效凭据
     if creds.expired and creds.refresh_token:
         try:
             logging.info("Refreshing credentials before project ID discovery...")
@@ -554,7 +554,7 @@ def get_user_project_id(creds):
             logging.info("Credentials refreshed successfully for project ID discovery")
         except Exception as e:
             logging.error(f"Failed to refresh credentials while getting project ID: {e}")
-            # Continue with existing credentials - they might still work
+            # 继续使用现有凭据 - 可能仍然有效
     
     if not creds.token:
         raise Exception("No valid access token available for project ID discovery")

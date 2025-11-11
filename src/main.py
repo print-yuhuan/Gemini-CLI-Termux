@@ -6,7 +6,7 @@ from .gemini_routes import router as gemini_router
 from .openai_routes import router as openai_router
 from .auth import get_credentials, get_user_project_id, onboard_user
 
-# Load environment variables from .env file
+# 加载 .env 文件中的环境变量
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -16,7 +16,7 @@ except ImportError:
 except Exception as e:
     logging.warning(f"Could not load .env file: {e}")
 
-# Configure logging
+# 日志记录配置
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -24,21 +24,21 @@ logging.basicConfig(
 
 app = FastAPI()
 
-# Add CORS middleware for preflight requests
+# 添加 CORS 中间件以处理跨域预检请求
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
+    allow_origins=["*"],        # 允许所有来源
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],        # 允许所有 HTTP 方法
+    allow_headers=["*"],        # 允许所有请求头
 )
 
 @app.on_event("startup")
 async def startup_event():
     try:
         logging.info("Starting Gemini proxy server...")
-        
-        # Check if credentials exist
+
+        # 检查凭据文件是否存在
         import os
         from .config import CREDENTIAL_FILE
         
@@ -47,7 +47,7 @@ async def startup_event():
         
         if env_creds_json or creds_file_exists:
             try:
-                # Try to load existing credentials without OAuth flow first
+                # 尝试加载现有凭据（不启动 OAuth 流程）
                 creds = get_credentials(allow_oauth_flow=False)
                 if creds:
                     try:
@@ -66,7 +66,7 @@ async def startup_event():
                 logging.error(f"Credential loading error: {str(e)}")
                 logging.warning("Server started but credentials need to be set up.")
         else:
-            # No credentials found - prompt user to authenticate
+            # 未找到凭据，启动 OAuth 身份验证流程
             logging.info("No credentials found. Starting OAuth authentication flow...")
             try:
                 creds = get_credentials(allow_oauth_flow=True)
@@ -94,7 +94,7 @@ async def startup_event():
 
 @app.options("/{full_path:path}")
 async def handle_preflight(request: Request, full_path: str):
-    """Handle CORS preflight requests without authentication."""
+    """处理 CORS 预检请求（无需身份验证）"""
     return Response(
         status_code=200,
         headers={
@@ -105,12 +105,13 @@ async def handle_preflight(request: Request, full_path: str):
         }
     )
 
-# Root endpoint - no authentication required
+# 根端点（无需身份验证）
 @app.get("/")
 async def root():
     """
-    Root endpoint providing project information.
-    No authentication required.
+    根端点 - 提供项目基本信息
+
+    无需身份验证即可访问。
     """
     return {
         "name": "Gemini-CLI-Termux",
@@ -133,10 +134,10 @@ async def root():
         "repository": "https://github.com/print-yuhuan/Gemini-CLI-Termux"
     }
 
-# Health check endpoint for Docker/Hugging Face
+# 健康检查端点（用于 Docker/Hugging Face 容器编排）
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for container orchestration."""
+    """容器编排系统的健康检查端点"""
     return {"status": "healthy", "service": "Gemini-CLI-Termux"}
 
 app.include_router(openai_router)
