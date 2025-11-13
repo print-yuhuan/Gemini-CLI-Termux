@@ -3,6 +3,14 @@ OpenAI API 路由模块 - 处理 OpenAI 兼容端点
 
 本模块提供 OpenAI 兼容接口，负责请求/响应格式转换，
 并委托给 Google API 客户端进行实际处理。
+
+主要功能：
+1. OpenAI 聊天完成端点（/v1/chat/completions）
+   - 支持流式和非流式响应
+   - 自动转换请求/响应格式
+2. OpenAI 模型列表端点（/v1/models）
+   - 将 Gemini 模型列表转换为 OpenAI 格式
+3. 错误处理与格式转换
 """
 import json
 import uuid
@@ -60,12 +68,15 @@ async def openai_chat_completions(
         )
     
     if request.stream:
-        # 流式响应处理
+        # 流式响应处理（Server-Sent Events 格式）
         async def openai_stream_generator():
+            """异步生成器：逐块转换并发送流式响应"""
             try:
+                # 向 Google API 发送流式请求
                 response = send_gemini_request(gemini_payload, is_streaming=True)
-                
+
                 if isinstance(response, StreamingResponse):
+                    # 生成唯一的响应 ID（整个流式会话保持一致）
                     response_id = "chatcmpl-" + str(uuid.uuid4())
                     logging.info(f"Starting streaming response: {response_id}")
                     

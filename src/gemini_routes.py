@@ -3,6 +3,12 @@ Gemini API 路由模块 - 处理原生 Gemini API 端点
 
 本模块提供原生 Gemini API 端点，直接代理至 Google API，
 无需进行任何格式转换。
+
+主要功能：
+1. 提供模型列表端点（/v1beta/models、/v1/models）
+2. 代理所有原生 Gemini API 请求（generateContent、streamGenerateContent 等）
+3. 从请求路径中提取模型名称
+4. 构建符合 Google API 规范的请求负载
 """
 import json
 import logging
@@ -65,14 +71,15 @@ async def gemini_proxy(request: Request, full_path: str, username: str = Depends
     """
     
     try:
-        # 读取请求体数据
+        # 读取请求体数据（原始字节流）
         post_data = await request.body()
 
-        # 根据路径判断是否为流式请求
+        # 根据路径判断是否为流式请求（路径中包含 "stream" 关键字）
         is_streaming = "stream" in full_path.lower()
 
         # 从路径中提取模型名称
-        # 路径格式示例：v1beta/models/gemini-1.5-pro/generateContent
+        # 路径格式示例：v1beta/models/gemini-2.5-pro/generateContent
+        # 提取结果：gemini-2.5-pro
         model_name = _extract_model_from_path(full_path)
         
         logging.info(f"Gemini proxy request: path={full_path}, model={model_name}, stream={is_streaming}")

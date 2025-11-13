@@ -1,3 +1,12 @@
+"""
+身份验证模块 - 处理 OAuth2 身份验证和用户授权
+
+本模块负责：
+1. 多种身份验证方式支持（API Key、Bearer Token、Basic Auth 等）
+2. Google OAuth2 授权流程管理
+3. 凭据存储与刷新
+4. 用户引导流程处理
+"""
 import os
 import json
 import base64
@@ -20,38 +29,67 @@ from .config import (
     CODE_ASSIST_ENDPOINT, GEMINI_AUTH_PASSWORD
 )
 
-# --- 全局状态变量 ---
-credentials = None
-user_project_id = None
-onboarding_complete = False
-credentials_from_env = False  # 标记凭据来源是否为环境变量
+# ==================== 全局状态变量 ====================
+credentials = None  # 当前 OAuth2 凭据对象
+user_project_id = None  # 用户的 Google Cloud 项目 ID
+onboarding_complete = False  # 用户引导流程是否已完成
+credentials_from_env = False  # 标记凭据来源是否为环境变量（环境变量凭据不可写入文件）
 
-security = HTTPBasic()
+security = HTTPBasic()  # FastAPI HTTP Basic 认证实例
 
 class _OAuthCallbackHandler(BaseHTTPRequestHandler):
-    auth_code = None
+    """
+    OAuth2 授权回调处理器
+
+    处理 Google OAuth2 授权重定向回调，提取授权码。
+    本地启动 HTTP 服务器监听回调请求（端口 8080）。
+    """
+    auth_code = None  # 类变量：存储接收到的授权码
+
     def do_GET(self):
+        """处理 GET 请求，提取授权码"""
+        # 解析 URL 查询参数
         query_components = parse_qs(urlparse(self.path).query)
-        code = query_components.get("code", [None])[0]
+        code = query_components.get("code", [None])[0]  # 提取授权码
+
         if code:
+            # 授权成功：保存授权码并返回成功页面
             _OAuthCallbackHandler.auth_code = code
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"<h1>OAuth authentication successful!</h1><p>You can close this window. Please check the proxy server logs to verify that onboarding completed successfully. No need to restart the proxy.</p>")
         else:
+            # 授权失败：返回错误页面
             self.send_response(400)
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"<h1>Authentication failed.</h1><p>Please try again.</p>")
 
 def authenticate_user(request: Request):
-    """使用多种方式进行用户身份验证"""
+    """
+    使用多种方式进行用户身份验证
+
+    支持以下验证方式（按优先级顺序）：
+    1. URL 查询参数 ?key=<password>（Gemini 客户端兼容格式）
+    2. HTTP 请求头 x-goog-api-key: <password>（Google SDK 格式）
+    3. HTTP 请求头 Authorization: Bearer <password>（标准 Bearer Token）
+    4. HTTP 请求头 Authorization: Basic <base64(username:password)>（HTTP Basic Auth）
+
+    参数：
+        request (Request): FastAPI 请求对象
+
+    返回：
+        str: 认证成功的用户标识
+
+    异常：
+        HTTPException: 所有验证方式失败时抛出 401 错误
+    """
     # 优先级1：检查查询参数中的 API 密钥（Gemini 客户端兼容）
     api_key = request.query_params.get("key")
     if api_key and api_key == GEMINI_AUTH_PASSWORD:
         return "api_key_user"
-    
+
     # 优先级2：检查 x-goog-api-key 请求头（Google SDK 格式）
     goog_api_key = request.headers.get("x-goog-api-key", "")
     if goog_api_key and goog_api_key == GEMINI_AUTH_PASSWORD:
@@ -60,22 +98,22 @@ def authenticate_user(request: Request):
     # 优先级3：检查 Authorization 请求头中的 Bearer 令牌
     auth_header = request.headers.get("authorization", "")
     if auth_header.startswith("Bearer "):
-        bearer_token = auth_header[7:]
+        bearer_token = auth_header[7:]  # 提取 "Bearer " 后的令牌
         if bearer_token == GEMINI_AUTH_PASSWORD:
             return "bearer_user"
-    
+
     # 优先级4：检查 HTTP Basic 基本身份验证
     if auth_header.startswith("Basic "):
         try:
-            encoded_credentials = auth_header[6:]
+            encoded_credentials = auth_header[6:]  # 移除 "Basic " 前缀
             decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8', "ignore")
-            username, password = decoded_credentials.split(':', 1)
+            username, password = decoded_credentials.split(':', 1)  # 分割用户名和密码
             if password == GEMINI_AUTH_PASSWORD:
-                return username
+                return username  # 返回用户名作为标识
         except Exception:
-            pass
-    
-    # 所有验证方式均失败
+            pass  # 解析失败，继续尝试其他验证方式
+
+    # 所有验证方式均失败，抛出 401 错误
     raise HTTPException(
         status_code=401,
         detail="Invalid authentication credentials. Use HTTP Basic Auth, Bearer token, 'key' query parameter, or 'x-goog-api-key' header.",
@@ -83,6 +121,20 @@ def authenticate_user(request: Request):
     )
 
 def save_credentials(creds, project_id=None):
+    """
+    保存 OAuth2 凭据到文件
+
+    将刷新令牌、访问令牌、过期时间等信息持久化到凭据文件。
+    环境变量来源的凭据不会被覆盖写入文件（避免丢失原始配置）。
+
+    参数：
+        creds (Credentials): Google OAuth2 凭据对象
+        project_id (str, optional): Google Cloud 项目 ID
+
+    注意：
+        - 若凭据来自环境变量（credentials_from_env=True），仅更新文件中的 project_id
+        - 否则完整保存凭据信息（包括令牌和过期时间）
+    """
     global credentials_from_env
 
     # 环境变量来源的凭据不写入文件，
@@ -100,7 +152,7 @@ def save_credentials(creds, project_id=None):
                     logging.info(f"Added project_id {project_id} to existing credential file")
             except Exception as e:
                 logging.warning(f"Could not update project_id in credential file: {e}")
-        return
+        return  # 环境变量凭据不继续保存
     
     creds_data = {
         "client_id": CLIENT_ID,
@@ -137,9 +189,30 @@ def save_credentials(creds, project_id=None):
     
 
 def get_credentials(allow_oauth_flow=True):
-    """加载符合 gemini-cli OAuth2 流程的凭据"""
+    """
+    加载符合 gemini-cli OAuth2 流程的凭据
+
+    按优先级顺序尝试加载凭据：
+    1. 环境变量 GEMINI_CREDENTIALS（JSON 字符串格式）
+    2. 凭据文件（CREDENTIAL_FILE 或 GOOGLE_APPLICATION_CREDENTIALS 指定的路径）
+    3. 启动 OAuth2 授权流程（若 allow_oauth_flow=True）
+
+    支持自动刷新过期的凭据（需存在刷新令牌）。
+
+    参数：
+        allow_oauth_flow (bool): 是否允许启动 OAuth2 授权流程。默认为 True。
+
+    返回：
+        Credentials: Google OAuth2 凭据对象，失败时返回 None
+
+    注意：
+        - 若凭据已缓存在全局变量中，直接返回
+        - 支持多种凭据格式的兼容处理
+        - 自动修复有问题的过期时间格式
+    """
     global credentials, credentials_from_env, user_project_id
-    
+
+    # 若已缓存有效凭据，直接返回
     if credentials and credentials.token:
         return credentials
     

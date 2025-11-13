@@ -2,6 +2,19 @@
 OpenAI 格式转换器模块 - 处理 OpenAI 与 Gemini API 格式互转
 
 本模块包含 OpenAI 和 Gemini API 之间请求/响应格式转换的全部逻辑。
+
+主要功能：
+1. 请求转换（OpenAI → Gemini）
+   - 角色映射（assistant → model、system → user）
+   - 参数映射（temperature、top_p、max_tokens 等）
+   - 多模态内容处理（Markdown 图片 → inlineData）
+   - 思考配置（reasoning_effort、thinkingBudget）
+
+2. 响应转换（Gemini → OpenAI）
+   - 非流式响应转换
+   - 流式响应块转换
+   - 思考内容分离（thought flag → reasoning_content）
+   - 结束原因映射（STOP、MAX_TOKENS、SAFETY 等）
 """
 import json
 import time
@@ -36,12 +49,14 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
     # 处理对话历史中的每条消息
     for message in openai_request.messages:
         role = message.role
-        
+
         # 映射角色名称：OpenAI → Gemini
+        # OpenAI: system, user, assistant
+        # Gemini: user, model（无 system 角色，系统消息作为用户消息处理）
         if role == "assistant":
-            role = "model"
+            role = "model"  # 助手 → 模型
         elif role == "system":
-            role = "user"  # Gemini 中系统消息被视为用户消息
+            role = "user"  # 系统 → 用户
 
         # 处理不同的内容类型（纯文本字符串或多部分列表）
         if isinstance(message.content, list):
@@ -268,16 +283,19 @@ def gemini_response_to_openai(gemini_response: Dict[str, Any], model: str) -> Di
             role = "assistant"
 
         # 提取并分离思考令牌与常规内容
+        # Gemini API 使用 "thought": true 标记思考过程的文本片段
         parts = candidate.get("content", {}).get("parts", [])
-        content_parts = []
-        reasoning_content = ""
-        
+        content_parts = []  # 常规内容（返回给用户）
+        reasoning_content = ""  # 思考内容（推理过程）
+
         for part in parts:
             # 文本部分（可能包含思考令牌）
             if part.get("text") is not None:
                 if part.get("thought", False):
+                    # 思考令牌：添加到 reasoning_content
                     reasoning_content += part.get("text", "")
                 else:
+                    # 常规文本：添加到 content_parts
                     content_parts.append(part.get("text", ""))
                 continue
 

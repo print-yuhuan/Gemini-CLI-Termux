@@ -2,6 +2,13 @@
 Google API 客户端模块 - 负责与 Google Gemini API 的通信
 
 本模块为 OpenAI 兼容层和原生 Gemini 端点提供统一的 API 通信接口。
+
+主要功能：
+1. 发送请求到 Google Cloud Code Assist API
+2. 处理流式和非流式响应
+3. 构建符合 Google API 规范的请求负载
+4. 配置安全设置、思考预算、搜索增强等功能
+5. 凭据管理和自动刷新
 """
 import json
 import logging
@@ -34,16 +41,16 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
     返回：
         FastAPI Response 对象
     """
-    # 获取并验证身份凭据
+    # 获取并验证 OAuth2 身份凭据
     creds = get_credentials()
     if not creds:
         return Response(
-            content="Authentication failed. Please restart the proxy to log in.", 
+            content="Authentication failed. Please restart the proxy to log in.",
             status_code=500
         )
-    
 
-    # 若凭据已过期且存在刷新令牌，则刷新凭据
+
+    # 若凭据已过期且存在刷新令牌，则自动刷新访问令牌
     if creds.expired and creds.refresh_token:
         try:
             creds.refresh(GoogleAuthRequest())
@@ -66,18 +73,18 @@ def send_gemini_request(payload: dict, is_streaming: bool = False) -> Response:
     
     onboard_user(creds, proj_id)
 
-    # 构建包含项目信息的最终请求负载
+    # 构建包含项目信息的最终请求负载（Google Cloud Code Assist API 格式）
     final_payload = {
-        "model": payload.get("model"),
-        "project": proj_id,
-        "request": payload.get("request", {})
+        "model": payload.get("model"),  # 模型名称（基础名称，不含变体后缀）
+        "project": proj_id,  # Google Cloud 项目 ID
+        "request": payload.get("request", {})  # 请求参数（contents、generationConfig 等）
     }
 
     # 确定请求操作类型和目标 URL
-    action = "streamGenerateContent" if is_streaming else "generateContent"
+    action = "streamGenerateContent" if is_streaming else "generateContent"  # 流式或非流式
     target_url = f"{CODE_ASSIST_ENDPOINT}/v1internal:{action}"
     if is_streaming:
-        target_url += "?alt=sse"
+        target_url += "?alt=sse"  # 流式响应使用 Server-Sent Events 格式
 
     # 构建 HTTP 请求头
     request_headers = {
