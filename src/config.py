@@ -18,7 +18,7 @@ except Exception:
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 
 # 客户端配置
-CLI_VERSION = "0.13.0"  # 与当前 gemini-cli 版本保持一致
+CLI_VERSION = "0.15.1"  # 与当前 gemini-cli 版本保持一致
 
 # OAuth 配置
 CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
@@ -38,16 +38,17 @@ GEMINI_AUTH_PASSWORD = os.getenv("GEMINI_AUTH_PASSWORD", "123")
 
 # Google API 默认安全配置
 DEFAULT_SAFETY_SETTINGS = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_CIVIC_INTEGRITY", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_HARASSMENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_HATE", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"}
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},  # 骚扰内容（威胁、恐吓等）
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},  # 仇恨言论（基于种族、宗教等的歧视性内容）
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},  # 色情内容（露骨的性描述）
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},  # 危险内容（暴力、自残等有害行为）
+    {"category": "HARM_CATEGORY_CIVIC_INTEGRITY", "threshold": "BLOCK_NONE"},  # 公民诚信（虚假信息、选举操纵等）
+    {"category": "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},  # 图像危险内容（图片中的暴力场景）
+    {"category": "HARM_CATEGORY_IMAGE_HARASSMENT", "threshold": "BLOCK_NONE"},  # 图像骚扰内容（图片中的威胁性内容）
+    {"category": "HARM_CATEGORY_IMAGE_HATE", "threshold": "BLOCK_NONE"},  # 图像仇恨内容（图片中的歧视性符号）
+    {"category": "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},  # 图像色情内容（图片中的露骨性内容）
+    {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"},  # 未指定类别（其他类型的有害内容）
+    {"category": "HARM_CATEGORY_JAILBREAK", "threshold": "BLOCK_NONE"}  # 越狱提示（绕过AI安全限制的提示词攻击）
 ]
 
 # 基础模型列表（不含搜索和思考变体）
