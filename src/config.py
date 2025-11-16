@@ -18,7 +18,7 @@ except Exception:
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 
 # 客户端配置
-CLI_VERSION = "0.13.0"  # 与当前 gemini-cli 版本保持一致
+CLI_VERSION = "0.15.1"  # 与当前 gemini-cli 版本保持一致
 
 # OAuth 配置
 CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
@@ -37,17 +37,40 @@ CREDENTIAL_FILE = os.path.join(SCRIPT_DIR, os.getenv("GOOGLE_APPLICATION_CREDENT
 GEMINI_AUTH_PASSWORD = os.getenv("GEMINI_AUTH_PASSWORD", "123")
 
 # Google API 默认安全配置
+# 配置说明：所有类别均设置为 BLOCK_NONE（不阻止），允许模型处理所有类型的内容
 DEFAULT_SAFETY_SETTINGS = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    # 1. HARM_CATEGORY_UNSPECIFIED - 默认值，未使用（保留用于兼容性）
+    {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"},
+
+    # 2. HARM_CATEGORY_HATE_SPEECH - 仇恨言论：宣扬暴力或基于某些属性煽动对个人或群体仇恨的内容
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+
+    # 3. HARM_CATEGORY_DANGEROUS_CONTENT - 危险内容：宣传、促进或支持危险活动的内容
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+
+    # 4. HARM_CATEGORY_HARASSMENT - 骚扰：辱骂性、威胁性或旨在欺凌、折磨或嘲笑的内容
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+
+    # 5. HARM_CATEGORY_SEXUALLY_EXPLICIT - 色情内容：包含露骨性材料的内容
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+
+    # 6. HARM_CATEGORY_CIVIC_INTEGRITY - 公民诚信（已弃用，保留用于向后兼容）
     {"category": "HARM_CATEGORY_CIVIC_INTEGRITY", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_IMAGE_HARASSMENT", "threshold": "BLOCK_NONE"},
+
+    # 7. HARM_CATEGORY_IMAGE_HATE - 图像仇恨言论：包含仇恨言论的图像
     {"category": "HARM_CATEGORY_IMAGE_HATE", "threshold": "BLOCK_NONE"},
+
+    # 8. HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT - 图像危险内容：包含危险内容的图像
+    {"category": "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+
+    # 9. HARM_CATEGORY_IMAGE_HARASSMENT - 图像骚扰：包含骚扰内容的图像
+    {"category": "HARM_CATEGORY_IMAGE_HARASSMENT", "threshold": "BLOCK_NONE"},
+
+    # 10. HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT - 图像色情内容：包含露骨性内容的图像
     {"category": "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"}
+
+    # 11. HARM_CATEGORY_JAILBREAK - 越狱提示：旨在绕过安全过滤器的提示
+    {"category": "HARM_CATEGORY_JAILBREAK", "threshold": "BLOCK_NONE"},
 ]
 
 # 基础模型列表（不含搜索和思考变体）
