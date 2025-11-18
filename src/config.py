@@ -18,7 +18,7 @@ except Exception:
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 
 # 客户端配置
-CLI_VERSION = "0.15.1"  # 与当前 gemini-cli 版本保持一致
+CLI_VERSION = "0.16.0"  # 当前 Gemini-CLI 版本
 
 # OAuth 配置
 CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
@@ -76,32 +76,6 @@ DEFAULT_SAFETY_SETTINGS = [
 # 基础模型列表（不含搜索和思考变体）
 BASE_MODELS = [
     {
-        "name": "models/gemini-2.5-pro-preview-03-25",
-        "version": "001",
-        "displayName": "Gemini 2.5 Pro Preview 03-25",
-        "description": "Gemini 2.5 Pro Preview 03-25",
-        "inputTokenLimit": 1048576,
-        "outputTokenLimit": 65535,
-        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
-        "temperature": 1.0,
-        "maxTemperature": 2.0,
-        "topP": 0.95,
-        "topK": 64
-    },
-    {
-        "name": "models/gemini-2.5-pro-preview-05-06",
-        "version": "001",
-        "displayName": "Gemini 2.5 Pro Preview 05-06",
-        "description": "Gemini 2.5 Pro Preview 05-06",
-        "inputTokenLimit": 1048576,
-        "outputTokenLimit": 65535,
-        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
-        "temperature": 1.0,
-        "maxTemperature": 2.0,
-        "topP": 0.95,
-        "topK": 64
-    },
-    {
         "name": "models/gemini-2.5-pro-preview-06-05",
         "version": "001",
         "displayName": "Gemini 2.5 Pro Preview 06-05",
@@ -128,36 +102,10 @@ BASE_MODELS = [
         "topK": 64
     },
     {
-        "name": "models/gemini-3-pro-preview-11-2025",
+        "name": "models/gemini-3-pro-preview",
         "version": "001",
-        "displayName": "Gemini 3 Pro Preview 11-2025",
-        "description": "Gemini 3 Pro Preview 11-2025",
-        "inputTokenLimit": 1048576,
-        "outputTokenLimit": 65535,
-        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
-        "temperature": 1.0,
-        "maxTemperature": 2.0,
-        "topP": 0.95,
-        "topK": 64
-    },
-    {
-        "name": "models/gemini-2.5-flash-preview-04-17",
-        "version": "001",
-        "displayName": "Gemini 2.5 Flash Preview 04-17",
-        "description": "Gemini 2.5 Flash Preview 04-17",
-        "inputTokenLimit": 1048576,
-        "outputTokenLimit": 65535,
-        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
-        "temperature": 1.0,
-        "maxTemperature": 2.0,
-        "topP": 0.95,
-        "topK": 64
-    },
-    {
-        "name": "models/gemini-2.5-flash-preview-05-20",
-        "version": "001",
-        "displayName": "Gemini 2.5 Flash Preview 05-20",
-        "description": "Gemini 2.5 Flash Preview 05-20",
+        "displayName": "Gemini 3 Pro Preview",
+        "description": "Gemini 3 Pro Preview",
         "inputTokenLimit": 1048576,
         "outputTokenLimit": 65535,
         "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
@@ -179,19 +127,6 @@ BASE_MODELS = [
         "topP": 0.95,
         "topK": 64
     },
-    {
-        "name": "models/gemini-2.5-flash-image-preview",
-        "version": "001",
-        "displayName": "Gemini 2.5 Flash Image Preview",
-        "description": "Gemini 2.5 Flash Image Preview",
-        "inputTokenLimit": 32768,
-        "outputTokenLimit": 32768,
-        "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
-        "temperature": 1.0,
-        "maxTemperature": 2.0,
-        "topP": 0.95,
-        "topK": 64
-    }
 ]
 
 # 生成搜索增强模型变体
@@ -206,9 +141,7 @@ def _generate_search_variants():
         list: 搜索增强模型变体列表
     """
     search_models = []
-    # 排除不支持搜索的特殊模型（如 gemini-2.5-flash-image）
-    base_model_with_variance = [model for model in BASE_MODELS if "gemini-2.5-flash-image" not in model["name"]]
-    for model in base_model_with_variance:
+    for model in BASE_MODELS:
         # 仅为支持内容生成的模型创建搜索变体
         if "generateContent" in model["supportedGenerationMethods"]:
             search_variant = model.copy()  # 深拷贝基础模型配置
@@ -233,9 +166,7 @@ def _generate_thinking_variants():
         list: 思考模式变体列表
     """
     thinking_models = []
-    # 排除不支持思考配置的特殊模型
-    base_model_with_variance = [model for model in BASE_MODELS if "gemini-2.5-flash-image" not in model["name"]]
-    for model in base_model_with_variance:
+    for model in BASE_MODELS:
         # 仅为支持内容生成且具备思考能力的模型创建变体
         # 适用模型：gemini-2.5-flash、gemini-2.5-pro、gemini-3-pro
         if ("generateContent" in model["supportedGenerationMethods"] and

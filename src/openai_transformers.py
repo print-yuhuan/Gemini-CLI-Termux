@@ -217,41 +217,40 @@ def openai_request_to_gemini(openai_request: OpenAIChatCompletionRequest) -> Dic
     # 为搜索模型启用 Google 搜索增强功能
     if is_search_model(openai_request.model):
         request_payload["tools"] = [{"googleSearch": {}}]
-    
-    if "gemini-2.5-flash-image" not in openai_request.model:
-        # 配置思考模型的思考参数
-        thinking_budget = None
 
-        # 判断是否为显式思考模式（nothinking 或 maxthinking）
-        if is_nothinking_model(openai_request.model) or is_maxthinking_model(openai_request.model):
-            # 显式思考模式：忽略 reasoning_effort，使用预设预算
-            thinking_budget = get_thinking_budget(openai_request.model)
+    # 配置思考模型的思考参数
+    thinking_budget = None
+
+    # 判断是否为显式思考模式（nothinking 或 maxthinking）
+    if is_nothinking_model(openai_request.model) or is_maxthinking_model(openai_request.model):
+        # 显式思考模式：忽略 reasoning_effort，使用预设预算
+        thinking_budget = get_thinking_budget(openai_request.model)
+    else:
+        # 常规模型：检查是否指定了 reasoning_effort 参数
+        reasoning_effort = getattr(openai_request, 'reasoning_effort', None)
+        if reasoning_effort:
+            base_model = get_base_model_name(openai_request.model)
+            if reasoning_effort == "minimal":
+                # 最小推理力度（与 nothinking 模式相同）
+                if "gemini-2.5-flash" in base_model:
+                    thinking_budget = 0
+                elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
+                    thinking_budget = 128
+            elif reasoning_effort == "low":
+                thinking_budget = 1000
+            elif reasoning_effort == "medium":
+                thinking_budget = -1
+            elif reasoning_effort == "high":
+                # 高推理力度（与 maxthinking 模式相同）
+                if "gemini-2.5-flash" in base_model:
+                    thinking_budget = 24576
+                elif "gemini-2.5-pro" in base_model:
+                    thinking_budget = 32768
+                elif "gemini-3-pro" in base_model:
+                    thinking_budget = 45000
         else:
-            # 常规模型：检查是否指定了 reasoning_effort 参数
-            reasoning_effort = getattr(openai_request, 'reasoning_effort', None)
-            if reasoning_effort:
-                base_model = get_base_model_name(openai_request.model)
-                if reasoning_effort == "minimal":
-                    # 最小推理力度（与 nothinking 模式相同）
-                    if "gemini-2.5-flash" in base_model:
-                        thinking_budget = 0
-                    elif "gemini-2.5-pro" in base_model or "gemini-3-pro" in base_model:
-                        thinking_budget = 128
-                elif reasoning_effort == "low":
-                    thinking_budget = 1000
-                elif reasoning_effort == "medium":
-                    thinking_budget = -1
-                elif reasoning_effort == "high":
-                    # 高推理力度（与 maxthinking 模式相同）
-                    if "gemini-2.5-flash" in base_model:
-                        thinking_budget = 24576
-                    elif "gemini-2.5-pro" in base_model:
-                        thinking_budget = 32768
-                    elif "gemini-3-pro" in base_model:
-                        thinking_budget = 45000
-            else:
-                # 未指定 reasoning_effort，使用默认思考预算
-                thinking_budget = get_thinking_budget(openai_request.model)
+            # 未指定 reasoning_effort，使用默认思考预算
+            thinking_budget = get_thinking_budget(openai_request.model)
 
         if thinking_budget is not None:
             request_payload["generationConfig"]["thinkingConfig"] = {

@@ -325,17 +325,14 @@ def build_gemini_payload_from_native(native_request: dict, model_from_path: str)
     
     if "thinkingConfig" not in native_request["generationConfig"]:
         native_request["generationConfig"]["thinkingConfig"] = {}
-    
-    if "gemini-2.5-flash-image" not in model_from_path:
-        # 根据模型类型配置思考预算
-        thinking_budget = get_thinking_budget(model_from_path)
-        include_thoughts = should_include_thoughts(model_from_path)
-    
-        native_request["generationConfig"]["thinkingConfig"]["includeThoughts"] = include_thoughts
-        if "thinkingBudget" in native_request["generationConfig"]["thinkingConfig"]:
-            pass
-        else:
-            native_request["generationConfig"]["thinkingConfig"]["thinkingBudget"] = thinking_budget
+
+    # 根据模型类型配置思考预算
+    thinking_budget = get_thinking_budget(model_from_path)
+    include_thoughts = should_include_thoughts(model_from_path)
+
+    native_request["generationConfig"]["thinkingConfig"]["includeThoughts"] = include_thoughts
+    if "thinkingBudget" not in native_request["generationConfig"]["thinkingConfig"]:
+        native_request["generationConfig"]["thinkingConfig"]["thinkingBudget"] = thinking_budget
     
     # 为搜索模型启用 Google 搜索增强功能
     if is_search_model(model_from_path):

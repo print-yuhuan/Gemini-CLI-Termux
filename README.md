@@ -38,9 +38,10 @@
 - **Gemini 2.5 Pro**: 高级多模态模型，支持超长上下文（1M tokens）
 - **Gemini 2.5 Flash**: 快速高效的多模态模型
 - **多版本支持**:
-  - Gemini 3 Pro Preview (11-2025)
-  - Gemini 2.5 Pro Preview (03-25、05-06、06-05)
-  - Gemini 2.5 Flash Preview (04-17、05-20)
+  - Gemini 3 Pro Preview
+  - Gemini 2.5 Pro Preview (06-05)
+  - Gemini 2.5 Pro
+  - Gemini 2.5 Flash
 - **模型变体**: 支持 search（搜索增强）、nothinking/maxthinking（思考模式）等变体
 - **灵活配置**: 可调节温度、top_p、top_k 等生成参数
 
@@ -300,15 +301,13 @@ curl -H "x-goog-api-key: 123" http://127.0.0.1:8888/v1/models
 <summary><b>查看完整模型列表</b>（点击展开）</summary>
 
 **Gemini 3 Pro 系列** 🌟：
-- `gemini-3-pro-preview-11-2025` - 最新一代高级多模态模型
-- `gemini-3-pro-preview-11-2025-search` - 搜索增强版
-- `gemini-3-pro-preview-11-2025-nothinking` - 无思考模式
-- `gemini-3-pro-preview-11-2025-maxthinking` - 最大思考模式
+- `gemini-3-pro-preview` - 最新一代高级多模态模型
+- `gemini-3-pro-preview-search` - 搜索增强版
+- `gemini-3-pro-preview-nothinking` - 无思考模式
+- `gemini-3-pro-preview-maxthinking` - 最大思考模式
 
 **Gemini 2.5 Pro 系列**：
 - `gemini-2.5-pro` - 高级多模态模型
-- `gemini-2.5-pro-preview-03-25` - 预览版本
-- `gemini-2.5-pro-preview-05-06` - 预览版本
 - `gemini-2.5-pro-preview-06-05` - 预览版本
 - `gemini-2.5-pro-search` - 搜索增强版
 - `gemini-2.5-pro-nothinking` - 无思考模式
@@ -316,9 +315,6 @@ curl -H "x-goog-api-key: 123" http://127.0.0.1:8888/v1/models
 
 **Gemini 2.5 Flash 系列**：
 - `gemini-2.5-flash` - 快速多模态模型
-- `gemini-2.5-flash-preview-04-17` - 预览版本
-- `gemini-2.5-flash-preview-05-20` - 预览版本
-- `gemini-2.5-flash-image-preview` - 图像预览版
 - `gemini-2.5-flash-search` - 搜索增强版
 - `gemini-2.5-flash-nothinking` - 无思考模式
 - `gemini-2.5-flash-maxthinking` - 最大思考模式
