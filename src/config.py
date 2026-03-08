@@ -18,7 +18,7 @@ except Exception:
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
 
 # 客户端配置
-CLI_VERSION = "0.21.3"  # 当前 Gemini-CLI 版本
+CLI_VERSION = "0.32.1"  # 当前 Gemini-CLI 版本
 
 # OAuth 配置
 CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"

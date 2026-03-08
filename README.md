@@ -9,7 +9,7 @@
 
 **为 Android Termux 用户提供一键部署 Gemini API 反向代理服务**
 
-[📺 视频教程](https://b23.tv/JKAqkEv) · [🐛 问题反馈](https://github.com/print-yuhuan/Gemini-CLI-Termux/issues) · [💬 QQ交流群：807134015](https://qm.qq.com/q/FUme0cSMqV)
+[📺 视频教程](https://b23.tv/JKAqkEv) · [🐛 问题反馈](https://github.com/print-yuhuan/Gemini-CLI-Termux/issues) · [💬 QQ交流群：807134015](https://qm.qq.com/q/urocaqUybK)
 
 </div>
 
@@ -34,7 +34,8 @@
 ## 🎯 核心功能亮点
 
 ### 🤖 Gemini 模型全系列支持
-- **Gemini 3 Pro**: 🌟 最新一代高级多模态模型，支持超长上下文（1M tokens）
+- **Gemini 3.1 Pro**: 🌟 最新一代高级多模态模型，支持超长上下文（1M tokens）
+- **Gemini 3 Pro**: 🌟 新一代高级多模态模型，支持超长上下文（1M tokens）
 - **Gemini 3 Flash**: 🌟最新一代快速高效的多模态模型
 - **Gemini 2.5 Pro**: 高级多模态模型，支持超长上下文（1M tokens）
 - **Gemini 2.5 Flash**: 快速高效的多模态模型
@@ -303,13 +304,13 @@ curl -H "x-goog-api-key: 123" http://127.0.0.1:8888/v1/models
 <summary><b>查看完整模型列表</b>（点击展开）</summary>
 
 **Gemini 3.1 Pro 系列** 🌟：
-- `gemini-3.1-pro-preview` - 最新一代高级多模态模型（3.1版本）
+- `gemini-3.1-pro-preview` - 最新一代高级多模态模型
 - `gemini-3.1-pro-preview-search` - 搜索增强版
 - `gemini-3.1-pro-preview-nothinking` - 无思考模式
 - `gemini-3.1-pro-preview-maxthinking` - 最大思考模式
 
 **Gemini 3 Pro 系列** 🌟：
-- `gemini-3-pro-preview` - 最新一代高级多模态模型
+- `gemini-3-pro-preview` - 新一代高级多模态模型
 - `gemini-3-pro-preview-search` - 搜索增强版
 - `gemini-3-pro-preview-nothinking` - 无思考模式
 - `gemini-3-pro-preview-maxthinking` - 最大思考模式
@@ -780,7 +781,7 @@ pydantic<2.0           # 数据验证和序列化
 ### 📧 联系方式
 
 - **GitHub Issues**: [提交问题](https://github.com/print-yuhuan/Gemini-CLI-Termux/issues)
-- **QQ 交流群**: [807134015](https://qm.qq.com/q/FUme0cSMqV)
+- **QQ 交流群**: [807134015](https://qm.qq.com/q/urocaqUybK)
 - **作者主页**: [@print-yuhuan](https://github.com/print-yuhuan)
 
 ---
